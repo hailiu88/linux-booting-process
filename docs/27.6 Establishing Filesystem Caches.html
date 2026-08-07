@@ -1,0 +1,783 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Establishing Filesystem Caches - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/27.6 Establishing Filesystem Caches.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="276-establishing-filesystem-caches"><a class="header" href="#276-establishing-filesystem-caches">27.6 Establishing Filesystem Caches</a></h2>
+<p>Within Linux, a filesystem is not merely a mechanism for data storage;
+it serves as the operational administrative core of the operating
+system, driven by the guiding philosophy that "everything is a file."
+The Virtual Filesystem (VFS) represents one of the most sophisticated
+designs in Linux—an architectural abstraction layer situated directly
+between user-space application programs and concrete, low-level
+filesystem implementations (such as ext4, XFS, NTFS, or NFS). Regardless
+of the underlying hard drive formatting, the commands utilized by users
+(such as ls or cp) remain uniform; the VFS assumes responsibility for
+translating these generalized instructions into specific low-level
+syntax blocks that the underlying storage controller can process.</p>
+<p>Linux segments file storage into two distinct components: index nodes
+(Inodes) and data blocks (Blocks). The index node archives a file's
+metadata (including access permissions, owner ownership flags, byte
+size, creation timestamps, and the absolute physical layout coordinates
+of data blocks on disk), while the data blocks house the actual file
+contents. Every individual file across the system is assigned a unique
+tracking Inode number.</p>
+<p>The Directory Entry (Dentry) records the explicit mapping bridging a
+literal filename to its corresponding index node number, functioning as
+the vital communication bridge linking filenames to physical files. This
+decoupled architecture explains precisely why an identical standalone
+file can be bound to multiple independent filenames simultaneously (the
+mechanism behind filesystem hard links).</p>
+<p>Depending on the targeted deployment profile and hardware constraints,
+production-grade Linux environments commonly integrate the following
+filesystem types:</p>
+<ul>
+<li>
+<p>Ext4: Exceptionally stable and highly compatible, serving as the
+standard default selection for the vast majority of mainstream Linux
+distributions.</p>
+</li>
+<li>
+<p>XFS: A high-performance, scalable journaling filesystem optimized to
+orchestrate massive files and withstand highly concurrent,
+multi-threaded hardware I/O workloads, routinely deployed on
+enterprise-grade database servers.</p>
+</li>
+<li>
+<p>Btrfs: Supports advanced Copy-on-Write (CoW) snapshots, dynamic volume
+pooling, and transparent online data compression, utilized extensively
+as the baseline layout for modern operating system images.</p>
+</li>
+<li>
+<p>F2FS (Flash-Friendly File System): Engineered specifically to optimize
+read and write operations across non-volatile flash storage
+architectures (such as SSDs, SD cards, and embedded mobile storage
+chips), significantly extending storage media longevity.</p>
+</li>
+</ul>
+<p>Within the Linux paradigm, interfacing with a new storage drive mandates
+executing a Mount operation. This configuration binds a hardware storage
+partition directly onto an existing directory node (the mount point)
+inside the system tree, empowering application threads to read and write
+drive contents by navigating via that targeted directory path.</p>
+<p>The function vfs_caches_init() instantiates the specialized lookaside
+allocation registries within the slab layer for file-related critical
+data structures, while bootstrapping the core infrastructure required to
+handle high-speed path translation loops and file object management. The
+routine is hosted within the directory cache source tree file
+git/fs/dcache.c, and its definition is implemented as follows:</p>
+<pre><code>void __init vfs_caches_init(void)
+{
+	names_cachep = kmem_cache_create_usercopy("names_cache", PATH_MAX, 0,
+		SLAB_HWCACHE_ALIGN|SLAB_PANIC, 0, PATH_MAX, NULL);
+	dcache_init();
+	inode_init();
+	files_init();
+	files_maxfiles_init();
+	mnt_init();
+	bdev_cache_init();
+	chrdev_init();
+}
+</code></pre>
+<p>The vfs_caches_init() function dispatches a call to dcache_init() to
+assemble the directory entry (dentry) cache framework, bootstrapping the
+core infrastructure that governs path resolution performance. A
+directory entry represents an independent string segment compiling a
+full filesystem pathway; for instance, the virtual file path
+/home/user/a.txt is programmatically decomposed into a linear chain
+composed of four distinct dentry blocks: /, home, user, and a.txt. All
+structural path resolution passes executed by the kernel are
+fundamentally engineered as a sequential search traversal tracking an
+interconnected chain of dentry objects. The microarchitectural
+relationship bridging literal filenames, tracking dentries, and physical
+filesystem nodes (represented by inodes) is illustrated in Figure 27-2.</p>
+<center>
+<figure>
+<img src="./media/image153.png" style="width:90%;height:auto" />
+<figcaption>
+<p>
+Figure 27-2 Structural Relationships Between Filenames, Directory
+Entries (Dentries), and Index Nodes (Inodes)</p>
+</figcaption>
+</figure>
+</center>
+<p>The routine dcache_init() leverages KMEM_CACHE_USERCOPY() to construct
+the master dentry_cache allocation pool. To harden the system against
+data leakage vectors during bi-directional user-copy streams, this
+specialized allocator strictly configures a boundary whitelist
+constraint dictating that when the kernel copies memory payloads back
+down to user space, only the localized memory bytes housing the .d_iname
+array field within struct dentry are authorized for exposure; all
+alternative internal tracking fields are blocked from direct copy
+access. Upon securing this lookaside pool, the function invokes
+alloc_large_system_hash() to initialize a high-speed global lookaside
+hash table named dentry_hashtable, allowing the filesystem engine to
+rapidly resolve a child directory entry by cross-referencing its parent
+dentry address with the target name string.</p>
+<p>Following this step, vfs_caches_init() calls inode_init() to establish
+the slab object allocation pool and corresponding global hash tables for
+index nodes, providing the structural foundation required to manage file
+metadata fields (permissions, sizes, and timestamps). The inode
+structure preserves a file's core administrative attributes, concretely
+describing the node layout; typical payload metrics enclose absolute
+file byte size, rwx access permission masks, uid/gid ownership keys,
+time tracking indices, physical disk block pointers, and the explicit
+file type classification (e.g., mapping whether the node represents a
+standard regular file, a directory container, or a peripheral
+character/block hardware device).</p>
+<p>The function inode_init() dispatches kmem_cache_create() to instantiate
+a specialized lookaside repository for index nodes, constructing a
+dedicated object pool for struct inode entries to eliminate the
+performance penalty of high-frequency memory allocations and
+deallocations. Furthermore, it dispatches alloc_large_system_hash() to
+initialize the global inode lookup hash table to ensure rapid object
+resolution during runtime file operations.</p>
+<p>Subsequently, vfs_caches_init() triggers files_init() to initialize the
+slab allocation caches for struct file instances along with the global
+tracking limits restricting open file descriptors, providing the
+structural infrastructure consumed by core system calls like open(),
+read(), and write().</p>
+<p>To clarify the structural layout: while the previously initialized
+dcache_init() focus is to resolve path string translation bottlenecks,
+and inode_init() is tasked with managing physical file entities in
+memory, files_init() is engineered specifically to handle the runtime
+orchestration of active, open file instances (objects instantiated
+following a successful call to open()). Within the system bootstrap
+pipeline, files_init() assumes sole responsibility for constructing the
+management framework that tracks open file handles.</p>
+<p>The kernel coordinates these open files by linking three highly critical
+data structures: the file table container structure (struct
+files_struct), the file descriptor table (struct fdtable), and the
+active file object descriptor (struct file). These three tracking nodes
+operate in a multi-tiered, hierarchical sequence to compose a
+comprehensive view of how a process orchestrates its open descriptors:</p>
+<ul>
+<li>
+<p>File Object (struct file): Captures and records the specific
+operational state resulting from an individual, successful call to
+open(). This structure encloses the active read/write byte offset
+tracker (f_pos), the access flags configuration bitmask (f_flags), and
+a path descriptor pointer (f_path) pointing to the underlying inode.
+Even if two entirely separate process threads concurrently open an
+identical physical file on disk, the kernel instantiates two entirely
+separate, decoupled file structures to track their respective sessions
+independently.</p>
+</li>
+<li>
+<p>Files Struct (struct files_struct): Governs the comprehensive registry
+of all files opened by an individual process thread. This
+administrative block is embedded directly within the process's main
+control block (struct task_struct) and manages a tracking pointer
+targeting the active fdtable layout, the open file descriptor
+allocation bitmaps, along with a small, localized pre-allocated array
+of file object references (implemented as a low-level
+microarchitectural optimization to bypass dynamic memory allocation
+cycles whenever a process handles merely a small volume of parallel
+file references).</p>
+</li>
+<li>
+<p>File Descriptor Table (struct fdtable): The core component inside this
+table is an index pointer array referencing an array of active file
+object pointers. Every individual cell slot within this pointer matrix
+houses a direct memory address referencing a target struct file
+descriptor, and the standard File Descriptor integer (FD) returned to
+user-space applications maps directly to the array's numeric index
+subscript. For example, when an application passes a file descriptor
+parameter of FD=0, the kernel's virtual memory translation layers
+query the 0-th index slot within this descriptor array to fetch the
+matching struct file reference pointer, smoothly resolving the active
+file context required to execute the requested I/O transaction.</p>
+</li>
+</ul>
+<p>The absolute microarchitectural and logical tracking relationships
+bridging the parent task, the files container, the descriptor arrays,
+and the underlying virtual filesystem structures are illustrated in the
+following structural layout:</p>
+<blockquote>
+<p><em>Process (struct task_struct)</em></p>
+<p><em>└── files_struct (Administrative Container)</em></p>
+<p><em>├── fdtab (Pointer referencing the actively deployed fdtable)</em></p>
+<p><em>└── fdtable (File Descriptor Table)</em></p>
+<p><em>└── fd[] (Array of pointers instantiated via double pointer
+**fd)</em></p>
+<p><em>├── [0] ----&gt; struct file (Standard Input - stdin)</em></p>
+<p><em>├── [1] ----&gt; struct file (Standard Output - stdout)</em></p>
+<p><em>└── [N] ----&gt; struct file (Custom Active Open File Descriptor)</em></p>
+<p><em>└── f_inode ----&gt; VFS Inode (Physical File Template)</em></p>
+</blockquote>
+<p>The core function files_init() dispatches kmem_cache_create() to
+construct a dedicated lookaside SLAB/SLUB allocation cache for file
+structures, optimizing the high-speed allocation and structural
+recycling of struct file instances. Every individual time an application
+thread fires an open() system call to access a filesystem node, the
+memory allocator extracts a clean descriptor block directly from this
+cached pool to record the distinct state metrics of that specific open
+session (such as tracking the live byte offset pointer f_pos and
+configuring the open access flags f_flags).</p>
+<p>Concurrently, files_init() parses the system's aggregate physical
+memory size to calculate a balanced, system-wide maximum open file
+capacity ceiling. By proactively reserving a finite, deterministic slice
+of physical memory to service file descriptor objects, the kernel
+guarantees that extreme high-concurrency workloads can never spawn an
+uncontrolled volume of open file instances that would completely
+saturate and crash the system's general memory nodes.</p>
+<p>In summary, the execution of files_init() bootstraps the foundational
+lookaside slab caches for struct file nodes and applies the global file
+object limit boundaries, establishing the core baseline infrastructure
+consumed by fundamental filesystem system calls like open() and close().
+It serves as the definitive command center for open file instance
+management inside the VFS layer.</p>
+<p>The companion routine files_maxfiles_init() behaves as a dedicated
+resource calculation engine tasked exclusively with defining system-wide
+maximum limits. Its central technical responsibility is to audit the
+aggregate physical memory capacity available across the machine and
+mathematically compute the absolute upper ceiling of concurrent file
+handles authorized to exist simultaneously within the image.</p>
+<p>The routine mnt_init() initializes the virtual filesystem mounting
+mechanism and assembles the initial skeletal skeleton of the master
+global mount tree. Its primary operations encompass instantiating the
+root node of the global mount namespace (the absolute root foundation of
+the mount tree), allocating memory resources for the local mount caching
+channels, initializing the array headers of the global mount lookup hash
+tables, registering and mounting core virtual filesystems, and
+establishing the definitive starting checkpoint for the VFS directory
+hierarchy tree.</p>
+<p>mnt_init() initially invokes kmem_cache_create() to carve out a
+dedicated lookaside allocation cache within the slab layer named
+"mnt_cache". Every single time a physical storage partition or virtual
+hardware block device is committed to a mount point across the system,
+the VFS core must instantiate a fresh struct mount tracking node.
+Deploying this dedicated lookaside pool drastically elevates memory
+management execution speeds during high-frequency allocation and
+deallocation sweeps over mount tracking nodes.</p>
+<p>Following this allocator setup, mnt_init() dispatches
+alloc_large_system_hash() to initialize a high-performance global
+lookaside lookup table named "Mount-cache", which is optimized to
+execute rapid descriptor lookups targeting active struct mount
+instances. The mount structure acts as the definitive data node within
+the Virtual Filesystem (VFS) layer to describe an individual, active
+mounted filesystem instance while tracking its absolute coordination
+coordinates inside the global mount tree. By cross-referencing a parent
+mount point address with its corresponding target dentry, the VFS engine
+can evaluate this hash table to rapidly determine whether a designated
+file path (such as /home) behaves as an independent physical mount
+boundary, significantly accelerating sub-mount resolution passes.</p>
+<p>Concurrently, mnt_init() dispatches an alternate call to
+alloc_large_system_hash() to carve out a separate system lookaside hash
+table named "Mountpoint-cache", which is engineered to manage and
+rapidly resolve physical mount point nodes across the kernel space.
+Distinct from the structural role of the "Mount-cache"—which uses a
+combined key fusing the "parent mount pointer + active mount dentry"
+to resolve a specific struct mount instance during path translation
+walks—the "Mountpoint-cache" is tasked exclusively with managing the
+physical mount points themselves, anchoring the concrete VFS directory
+entries (Dentries) where external file systems attach. By hashing the
+memory address pointers of these mount point dentries, the kernel can
+efficiently orchestrate mount tracking, execute unmount transformations,
+and continuously audit precisely how many independent filesystems are
+concurrently stacked over a single physical directory node.</p>
+<p>Subsequently, mnt_init() calls the low-level routine kernfs_init(),
+which dispatches kmem_cache_create() to prepare the operational
+infrastructure and lookaside allocation pools consumed by the virtual
+kernfs framework. This pass constructs a dedicated lookaside slab cache
+named "kernfs_node_cache" tailored to house struct kernfs_node
+elements. Within the Linux device driver and sysfs model, every
+independent directory entry, hardware property, or attribute tracking
+file exposed under the sysfs hierarchy (such as auditing a network
+card's physical MAC block via the path /sys/class/net/eth0/address)
+maps directly to a discrete, memory-resident kernfs_node structure
+inside the kernel.</p>
+<p>The most critical microarchitectural milestones orchestrated by
+mnt_init() are executed via the routines sysfs_init() and init_rootfs(),
+which build directly upon the lookaside slab caches established during
+the kernfs_init() phase.</p>
+<ul>
+<li>
+<p>The function sysfs_init() handles the physical creation of the
+absolute root directory node for the sysfs file system (the device
+model tracking filesystem, mounted standard at the directory path
+/sys) and registers the filesystem framework into the global VFS
+registries, opening the primary window through which the core kernel
+exposes its live hardware device hierarchy tree to user-space tools.</p>
+</li>
+<li>
+<p>Concurrently, init_rootfs() initializes the temporary memory-resident
+root filesystem (rootfs), which acts as the system's baseline initial
+root mount point throughout the remainder of the system bootstrap
+phase. It dictates whether the internal memory disk deployed to
+temporarily hold and run the early boot micro-archives (initramfs or
+initrd) is backed by a legacy, low-efficiency ramfs layout versus
+being powered by a contemporary, high-performance tmpfs memory
+allocation scheme.</p>
+</li>
+</ul>
+<p>Within the Linux virtual filesystem architecture, the path /sys/fs
+functions as the unified configuration, status tracking, and monitoring
+interaction interface, serving as the master entry funnel for multiple
+independent filesystems, mount points, and corresponding kernel API
+abstractions. These control interfaces are typically grouped by
+specialized sub-functions and distributed across dedicated subdirectory
+hierarchies, such as /sys/fs/cgroup, /sys/fs/ext4, /sys/fs/f2fs, and
+/sys/fs/bpf. mnt_init() dispatches a call to kobject_create_and_add() to
+dynamically construct an active system kobject named "fs" (which
+instantiates the physical directory entry /sys/fs), providing a
+centralized parent node to serve as the master repository anchoring all
+subsequent filesystem-specific sysfs management interfaces.</p>
+<p>At its conclusion, the mnt_init() function dispatches a call to
+shmem_init() to initialize the core shared memory (Shared Memory -
+shmem) and temporary ram-backed filesystem infrastructure (tmpfs /
+shmem). The Linux kernel exposes two completely decoupled implementation
+variants of shmem_init(), which are toggled at compile time based on the
+state of the configuration flag CONFIG_SHMEM. When CONFIG_SHMEM=y is
+active in the build parameters, the kernel compiles a full-featured,
+robust shared memory orchestration framework; conversely, if the flag is
+disabled, the toolchain substitutes a highly minimalist, space-optimized
+fallback variant designated as Tiny Shmem to accommodate tightly
+constrained micro-embedded systems.</p>
+<p>For the standard implementation, the function shmem_init() initializes
+the shared memory filesystem (tmpfs/shmem) [July 12, 2026]. It
+initially constructs a dedicated slab cache pool for shared memory index
+nodes (inodes). Following this lookup setup, the routine registers
+shmem_fs_type into the core VFS registries under the filesystem type
+string "tmpfs". It subsequently dispatches kern_mount() to mount an
+internal, private tmpfs filesystem instance tracked via the global
+handle shm_mnt, which acts as the definitive memory backing store
+consumed by shared memory allocations, anonymous files, and
+memfd_create() tracking systems. Furthermore, if the system image is
+running with Transparent Huge Pages (THP) active, the routine configures
+the corresponding huge page allocation and fragmentation policies for
+this master superblock.</p>
+<p>Within the Linux architecture, the kernel implements high-speed
+Inter-Processor Communication (IPC) by managing a specialized, hidden
+virtual filesystem dedicated to shared memory. In simple terms, the
+central engineering objective of the shared memory mechanism is to map
+an identical range of physical memory page frames into the virtual
+address spaces of entirely separate processes, enabling
+ultra-low-latency data exchange. While shared memory serves as the
+kernel's low-level backend memory page management engine, tmpfs acts as
+the user-space interaction interface layer. Whenever an administrator
+mounts a tmpfs instance (such as the standard system share /dev/shm),
+the underlying data files are stored directly inside this shared memory
+architecture.</p>
+<p>Under traditional process communication paradigms—such as transferring
+data payloads across pipes or network sockets—the data stream must
+undergo repetitive copy operations moving back and forth between the
+kernel context and the user memory canvas. The performance advantage of
+shared memory stems from its ability to bypass these bottlenecks
+entirely; by directly mapping a single contiguous physical memory block
+into the page tables of multiple concurrent processes, threads can read
+and write the shared memory space as fast as accessing their own private
+heaps, entirely eliminating kernel-space context switching overhead and
+data copying latencies.</p>
+<p>At its conclusion, mnt_init() dispatches init_mount_tree() to construct
+a temporary root directory workspace. init_mount_tree() acts as the
+critical bootstrap routine tasked with assembling the system's absolute
+first mount tree hierarchy, creating the foundational root view for all
+execution threads. It dispatches vfs_kern_mount() to mount a
+specialized, built-in root filesystem designated as rootfs, establishing
+the definitive logical first filesystem of the operating system. The
+engine then allocates the absolute first struct mount instance across
+the system to represent this root filesystem, making this node the root
+of the global mount tree. Following this deployment, init_mount_tree()
+instantiates the initial root namespace (init_user_ns) and links this
+first master mount structure directly into that namespace context. All
+subsequently spawned downstream processes (such as the upcoming master
+initialization thread, init) inherit this namespace by default. Finally,
+the routine binds the root directories of the executing bootstrap
+process, forcing both the root pointer (fs-&gt;root) and the current
+working directory pointer (fs-&gt;pwd) of the active kernel initialization
+thread to target the root directory entry of this newly minted
+memory-resident root filesystem.</p>
+<p>Only after this milestone concludes does the kernel acquire a functional
+concept of system pathways, empowering the VFS layer to start parsing
+and resolving the absolute path separator string: " / ".</p>
+<p>Within the Linux kernel bootstrap workflow, the routine
+bdev_cache_init() is executed immediately succeeding mnt_init(), serving
+as a critical initialization step for the low-level block device
+management layer. Its primary technical responsibility is to call
+kmem_cache_create() to construct a dedicated lookaside allocation pool
+within the slab layer named "bdev_cache" to service struct
+block_device nodes, invoke register_filesystem() to register the
+pseudo-filesystem bdev_fs, dispatch kern_mount() to mount this hidden
+block device filesystem internally, and securely archive the resulting
+filesystem superblock (super block) memory address pointer.</p>
+<p>Every individual disk partition, Logical Volume Manager (LVM) slice, or
+virtual loopback device (loop device) active across the machine is
+modeled inside the kernel via a discrete block_device structure
+instance. By establishing a dedicated lookaside cache pool for these
+structures, the block layer can dynamic allocate and recycle tracking
+nodes with peak performance efficiency.</p>
+<p>In accordance with Linux's standard architectural doctrine that
+everything is a file, every standalone block device must be mapped to a
+valid virtual filesystem index node (inode) before the kernel can
+orchestrate its operations under a unified management scheme. By
+mounting this hidden internal bdev file system, whenever an application
+thread opens a device node file inside the devtmpfs tree (such as
+accessing /dev/sda), the kernel allocates a backing index node straight
+from this hidden filesystem and binds it directly to the matching
+block_device descriptor structure.</p>
+<p>Across the Linux virtual filesystem layer and traditional disk-backed
+filesystems (such as ext4 or XFS), the Superblock acts as the definitive
+command center and master directory for the entire filesystem. It serves
+as the core data structure engineered to archive the comprehensive
+tracking metadata and global configuration parameters governing that
+explicit filesystem layout. Within the kernel source tracks, the
+VFS-layer superblock is structured via the descriptor struct
+super_block. It encapsulates highly critical tracking metrics,
+encompassing the physical disk block size layout, the aggregate count of
+disk blocks alongside total file inode allocation slots, the real-time
+tracking metrics logging available free disk blocks and vacant
+unallocated inodes, and structural filesystem status indicators (such as
+the Clean/Dirty validation mark used to audit whether the filesystem
+underwent a clean unmount pass). It concurrently stores the file system
+magic number (Magic Number) used to verify the precise formatting type
+of the partition, the volume label string, the unique disk UUID
+(Universally Unique Identifier), the structural mount attribute bitmasks
+(e.g., flagging whether the partition is locked as a read-only node
+versus an asynchronous read-write volume), and a master operations
+function pointer targeting a struct super_operations table (s_op). The
+super_operations method table encloses the explicit platform function
+handlers unique to that filesystem, mapping out the low-level logic
+loops required to allocate an inode, write back dirty superblock sectors
+onto physical disk plattters, or recycle dropped memory structures.</p>
+<p>The primary architectural role of the superblock is to facilitate
+high-speed index node resolution. Whenever the memory management
+subsystem determines that dirty page cache footprints must be flushed
+and written back onto physical disk platters, the block layer is
+required to systematically audit all active block devices. Equipped with
+this global superblock memory pointer, the kernel can instantly isolate
+and traverse every single index node (representing every configured
+block device) registered under that filesystem's jurisdiction,
+seamlessly triggering the asynchronous background data write-back
+pipelines.</p>
+<p>The final operational milestone orchestrated by the vfs_caches_init()
+routine is to initialize the tracking map architectures for character
+devices. Because Linux concurrently coordinates both block-level storage
+media and stream-oriented character peripherals, it calls chrdev_init()
+to bootstrap the foundational character device core mapping structure,
+cdev_map. This routine dispatches kobj_map_init() to construct the
+global lookup framework bridging system device numbers (composed of
+major and minor numbers) to their corresponding character device objects
+(struct cdev). This infrastructure ensures that the moment the VFS layer
+opens a character device node, it can leverage the hardware coordinate
+identifier stored inside inode-&gt;i_rdev to resolve the matching
+driver's method operations table (struct file_operations).</p>
+<p>Character devices typically process data payload streams via sequential,
+byte-granular tracking loops, remaining entirely independent of
+lookaside page caching mechanisms; consequently, they do not require a
+complex, heavy pseudo-filesystem infrastructure to govern their
+lifecycles. They demand merely a streamlined, lightweight cdev_map
+routing matrix to instruct the core kernel precisely which device driver
+callback function to dispatch whenever an application interfaces with a
+node like /dev/tty. This mapping array is implemented as a global hash
+table functioning analogously to a centralized directory exchange: the
+compiled device number (fusing the absolute Major device number with the
+localized Minor device number) behaves as the search lookup key, while
+the address referencing the target character device descriptor structure
+(struct cdev) serves as the hash value.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="27.5 Transitioning the Debugging Modality.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="27.7 Establishing the Page Cache Mechanism.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="27.5 Transitioning the Debugging Modality.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="27.7 Establishing the Page Cache Mechanism.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

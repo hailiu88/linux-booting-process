@@ -1,0 +1,657 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Memory Initialization Function - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/15.14 Memory Initialization Function.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="1514-memory-initialization-function"><a class="header" href="#1514-memory-initialization-function">15.14 Memory Initialization Function</a></h2>
+<p>The core entry point for memory initialization is the mm_init()
+function, which is decorated with the __init attribute and defined
+within the source file git/init/main.c. Its definition is implemented as
+follows:</p>
+<pre><code>static void __init mm_init(void)
+{
+	page_ext_init_flatmem();
+	init_debug_pagealloc();
+	report_meminit();
+	mem_init();
+	kmem_cache_init();
+	kmemleak_init();
+	pgtable_init();
+	debug_objects_mem_init();
+	vmalloc_init();
+	ioremap_huge_init();
+	init_espfix_bsp();
+	pti_init();
+}
+</code></pre>
+<p>The function page_ext_init_flatmem() is responsible for allocating
+memory blocks to accommodate the page extension architecture. If the
+underlying memory model is configured as a sparse model (SPARSEMEM),
+this function resolves to a no-operation (no-op). Conversely, if the
+system relies on a flat memory (FLATMEM) or non-contiguous memory model,
+it invokes alloc_node_page_ext(). This sub-routine leverages the early
+boot-stage block memory allocator via memblock_alloc_try_nid() to carve
+out contiguous memory zones for each individual memory node.</p>
+<p>When the system enables the compilation configurations
+CONFIG_DEBUG_PAGEALLOC and _debug_pagealloc_enabled_early, the function
+init_debug_pagealloc() sets the underlying enabled fields within the
+static jump labels _debug_pagealloc_enabled and debug_guardpage_enabled
+to activate memory page auditing and guard-page safety frameworks.</p>
+<ul>
+<li>
+<p>If memory page auditing is successfully energized, when a page is
+released back to the buddy allocator, the kernel hot-patches its
+matching page table entry to tag it as non-accessible. If any errant
+kernel code subsequently attempts to read from or execute an
+out-of-bounds write to this released page, the CPU instantly flags a
+hardware violation and triggers a Kernel Panic.</p>
+</li>
+<li>
+<p>If the guard-page framework is active, the kernel embeds
+non-accessible buffer gaps (Guard Pages) between explicit memory
+allocations, typically within vmalloc blocks or specialized stack
+boundaries. If a code execution path suffers a sequential buffer
+overflow write, the execution pipeline immediately encounters this
+guard page, causing the CPU to drop into a Page Fault exception due to
+page table permission violations. This mechanism forces the kernel to
+generate an immediate Oops report at the precise moment corruption
+manifests, rather than allowing the data pollution to remain
+undetected until a catastrophic system crash happens later.</p>
+</li>
+</ul>
+<p>The routine report_meminit() prints diagnostic logs during system boot
+to report the tracking values utilized when initializing automatic stack
+variables, heap chunks, and execution stacks. Automatic variables can be
+initialized to a zero-filled state, and call stacks can similarly be
+wiped to zero. The kernel data structures can be configured to adopt
+maximum, intermediate, or baseline protection masks, while heap
+allocations can be completely zero-filled at the moment of allocation or
+entirely wiped to zero upon deallocation. This routine generates
+diagnostic logs formatted similarly to:</p>
+<pre><code>mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+</code></pre>
+<p>The function mem_init() is defined within the architecture-specific
+source file git/arch/arm/mm/init.c. Its technical objective is to scan
+the global mem_map array and map out the exact boundaries of the
+residual free space remaining within the system after factoring in early
+boot allocations. This function primarily performs the following
+sequential operations:</p>
+<ol>
+<li>
+<p>It invokes swiotlb_init() to leverage the early block memory
+allocator to reserve backing bounce buffers for the SWIOTLB
+framework, while initializing the underlying data structures
+consumed by the translation layout.</p>
+</li>
+<li>
+<p>It executes set_max_mapnr() to establish the absolute maximum page
+frame number tracking limit (max_mapnr) for the system.</p>
+</li>
+<li>
+<p>It utilizes the routine free_unused_memmap() to release unallocated
+memory tracking metadata blocks (freeing unused zones within the
+regions mapped out for mem_map).</p>
+</li>
+<li>
+<p>It calls the function memblock_free_all(). This routine flushes the
+managed_pages counter of every node's struct zone to zero, marks
+the physical page frames registered as reserved memory inside the
+device tree with the PG_reserved bitmask (flagging them as
+unavailable memory), and subsequently transitions all remaining free
+memory blocks from a reserved state over to a free state by clearing
+the PG_reserved flag. It then forces the page reference counters to
+evaluate to 1, and hands these unallocated page frames over to be
+managed by the buddy allocator infrastructure via __free_pages().</p>
+</li>
+<li>
+<p>It aggregates the total volume of pages freed during step 4 onto the
+global system memory tracking counter _totalram_pages.</p>
+</li>
+<li>
+<p>It invokes free_highpages() to release all high-memory (HIGHMEM)
+free physical pages back into the buddy allocator pool, while
+updating the corresponding tracking counters totalhigh_pages and
+totalram_pages.</p>
+</li>
+<li>
+<p>It triggers mem_init_print_info() to emit a comprehensive
+statistical log detailing kernel memory resource utilization
+metrics.</p>
+</li>
+</ol>
+<p>The function kmem_cache_init() initializes the lookaside slice buffers
+utilized for dynamic kernel memory allocations. As established across
+preceding architectural sections, both the SLAB and SLUB allocation
+engines rely on kmem_cache structures to partition memory blocks that
+fall beneath a single-page threshold; therefore, the system must
+initialize the kmem_cache bootstrap registry. Linux implements
+independent initialization modules tailored specifically to the SLAB and
+SLUB frameworks, which are hosted within the files git/mm/slab.c and
+git/mm/slub.c, respectively.</p>
+<p>The specific initialization routine executed during the boot phase is
+determined entirely by compilation flags. If CONFIG_SLAB is enabled, the
+system executes the routine hosted inside slab.c; if CONFIG_SLUB is
+configured, it falls back to the routine inside slub.c. The kernel
+toolchain resolves this path at compile time by auditing the obj-y
+target specifications listed inside git/mm/Makefile. As previously
+detailed, the legacy SLAB allocator relies on kmem_cache_node objects to
+coordinate multi-node memory operations; consequently, the primary
+technical milestone for the SLAB allocator's version of
+kmem_cache_init() is to bootstrap these kmem_cache_node data structures.
+For the SLAB framework, the core operations of kmem_cache_init()
+encompass:</p>
+<ul>
+<li>
+<p>Establishing the three empty slab tracking lists (slabs_full,
+slabs_partial, and slabs_free) that are mandatory throughout memory
+allocation passes, and flushing the remaining fields of struct
+kmem_cache_node to zero.</p>
+</li>
+<li>
+<p>Configuring the global tracking variable slab_max_order governing the
+limits of slab sizing.</p>
+</li>
+<li>
+<p>Instantiating a specialized bootstrap cache kmem_cache_boot of type
+struct kmem_cache.</p>
+</li>
+<li>
+<p>Threading this newly created kmem_cache descriptor directly into the
+global slab_caches circular linked list.</p>
+</li>
+<li>
+<p>Leveraging the function create_kmalloc_cache() to carve out Lookaside
+buffers specifically allocated to house the struct kmem_cache_node
+objects.</p>
+</li>
+<li>
+<p>Copying the contents of the early initialization structure
+init_kmem_cache_node over into the active kmem_cache and
+kmalloc_caches registries, a routine that internally utilizes
+kmalloc_node() to dynamically allocate the required backing memory.</p>
+</li>
+<li>
+<p>Instantiating each missing array slot via new_kmalloc_cache() if the
+cell does not exist, thereby building the comprehensive
+two-dimensional matrix kmalloc_caches[type][index]. The allocator
+references this kmalloc_caches[type][index] grid to rapidly
+resolve and look up a slab memory block of a specific type and
+magnitude within the slab_caches list.</p>
+</li>
+</ul>
+<p>The function kmemleak_init() bootstraps the built-in automatic memory
+leak detection module, and its primary operations encompass:</p>
+<ul>
+<li>
+<p>Configuring the mandatory baseline age ceiling jiffies_min_age that
+must transpire following an allocation before leak auditing can safely
+target that object. Once a block of memory is assigned, the kernel
+generally requires a small temporal window to write the referencing
+pointers back into the memory layers. If auditing triggers prematurely
+before these pointers are committed, kmemleak will falsely flag the
+object as an orphan leak. By enforcing this constraint, an allocated
+data object is only integrated into the active scanning and leak
+reporting pipeline once its continuous lifetime outlasts this
+threshold.</p>
+</li>
+<li>
+<p>Configuring the execution interval window jiffies_scan_wait that
+governs the timing loops of the background leak detection daemon
+thread.</p>
+</li>
+<li>
+<p>Instantiating a lookaside cache object_cache composed of elements of
+type struct kmemleak_object that is explicitly immune to being tracked
+by the leak detection logic itself. This repository preserves the
+crucial metadata tracking descriptors for every chunk of allocated
+system memory, which the background scanner parses to execute leak
+evaluations.</p>
+</li>
+<li>
+<p>Instantiating a separate lookaside cache scan_area_cache composed of
+elements of type struct kmemleak_scan_area that is similarly immune to
+detection tracking, which is utilized to archive specific sub-regions
+within a memory block that require precise scanning.</p>
+</li>
+<li>
+<p>Generating tracking metadata records corresponding to the static
+.data, .bss, and .ro_after_init binary kernel sections, while
+explicitly tagging these segments as gray. Within the memory leak
+detector subsystem, memory blocks are categorized into three discrete
+tracking states: black, gray, and white. A black tag indicates that
+the memory segment is permanently active and requires no scanning
+passes. A gray tag denotes that the memory segment is permanently
+active, but its internal byte payload must be scanned because it
+potentially encloses pointer references targeting auxiliary memory
+modules. A white tag signifies that the object status is pending; if
+an object remains trapped in the white state when a comprehensive
+parsing sweep concludes, it is officially classified as a memory leak.</p>
+</li>
+</ul>
+<p>The function pgtable_init() calls the routines ptlock_cache_init() and
+pgtable_cache_init() to bootstrap the lookaside caches dedicated to
+tracking page table locks alongside architecture-specific page table
+blocks.</p>
+<ul>
+<li>
+<p>To prevent resource contention and thread synchronization bottlenecks
+across multi-core architectures, Linux relies extensively on a diverse
+family of locks. The routine ptlock_cache_init() instantiates a
+specialized kmem_cache allocation pool designated as page-&gt;ptl to
+facilitate the high-efficiency allocation and tracking of these page
+table locks. This lookaside cache is structured as a collection of
+kmem_cache descriptors, and its base address is tracked via the
+pointer variable page_ptl_cachep.</p>
+</li>
+<li>
+<p>The function pgtable_cache_init() initializes the
+architecture-dependent page validation structures. For 64-bit ARM
+platforms, if the physical magnitude of the Page Global Directory
+(PGD) differs from the native hardware page size, the routine carves
+out a specialized kmem_cache lookup buffer named pgd_cache;
+conversely, for 32-bit ARM architectures, this function resolves to a
+no-operation (no-op) block.</p>
+</li>
+</ul>
+<p>The function debug_objects_mem_init() sets up the core tracking
+infrastructures consumed by the object lifecycle validation subsystem
+(debug_objects). Its central task is to instantiate a primary memory
+pool designated as debug_objects_cache. This memory pool is reserved to
+house the debug_obj structure nodes that preserve the lifecycle metadata
+of every tracked object. Furthermore, debug_objects_mem_init()
+establishes a localized, per-CPU hash table for each individual
+processor core to store its own active debug_obj elements. To minimize
+inter-core locking contention and optimize execution path speeds, each
+CPU additionally manages a localized mini-pool containing a subset of
+debug_obj structures reserved exclusively for its own real-time tasks.</p>
+<p>The function vmalloc_init(void) prepares the framework-level
+configuration required to transition the system from basic physical
+memory tracking over to full virtual memory allocation management,
+serving as the foundational architectural prerequisite for subsequent
+calls to vmalloc(), vmap(), and ioremap(). Its primary technical
+objective is to establish and map out the precise virtual address space
+boundaries utilized by the vmalloc() subsystem. The core operational
+milestones of vmalloc_init() encompass:</p>
+<ul>
+<li>
+<p>Instantiating a lookaside cache named vmap_area composed of elements
+of type struct vmap_area. The base memory address tracking pointer for
+this cache is specified as vmap_area_cachep.</p>
+</li>
+<li>
+<p>Initializing the individual structural fields of the vmap_block_queue
+structures assigned to each CPU core. To minimize lock contention
+across distinct processor cores during high-frequency virtual memory
+allocations, Linux allocates a small pool of per-CPU private memory
+structures of type struct vmap_block to track the metadata of the
+vmap_area instances consumed locally by that core. This structure
+encapsulates fields including local spinlocks, a pointer referencing
+the specific underlying vmap_area block, flags logging whether the
+cached slot resides in a vacant state, and an embedded list tracking
+available free blocks. The vmap_block_queue container manages two
+primary tracking members: a spinlock and the list head anchoring the
+unallocated vmap_block elements.</p>
+</li>
+<li>
+<p>Initializing the per-CPU tracking structure vfree_deferred utilized to
+handle deferred memory deallocations. This tracking structure
+encapsulates a deferred reclamation list head along with a work_struct
+task block that maps out the background execution thread responsible
+for freeing the memory. Under numerous runtime execution conditions, a
+vmap_area allocation block consumed by a running process cannot be
+safely or instantly released. Under this constraint, the target memory
+block is shunted onto the deferred reclamation list referenced by the
+vfree_deferred context, and is subsequently drained and released at a
+more topologically appropriate time by the asynchronous processing
+worker free_work().</p>
+</li>
+<li>
+<p>Converting all legacy vm_struct allocation elements preserved within
+the early vmlist list over into the modern descriptor format utilized
+by the vmap_area engine, and transferring these nodes to consolidate
+vmalloc region tracking under a centralized management scheme.</p>
+</li>
+<li>
+<p>Traversing all allocated virtual memory blocks recorded across the
+vmap_area_list tracking chain. By executing a comprehensive sweep
+across this list, the initialization routing maps out the available
+vacant spaces inside the vmalloc window. It aggregates these free
+segments into a centralized interval red-black tree rooted at
+free_vmap_area_root, while concurrently threading the sequential list
+tracking fields of these unallocated vmap_area blocks onto a linear
+list headed by the symbol free_vmap_area_list.</p>
+</li>
+</ul>
+<p>The function ioremap_huge_init() initializes the operational bitmask
+flags that dictate whether the system is permitted to leverage huge
+pages (where PMDs support 2 MiB blocks and PUDs accommodate 1 GiB
+blocks) during heavy I/O memory mapping allocations. These tracking
+capability parameters encompass ioremap_p4d_capable,
+ioremap_pud_capable, and ioremap_pmd_capable, and their availability
+depends on the specific hardware architecture of the underlying
+processor.</p>
+<p>The function init_espfix_bsp() represents a specialized hot-patch
+routine embedded within the Linux kernel to mitigate the
+microarchitectural Intel x86_64 hardware CPU bug surrounding the
+handling of the ESP stack pointer register; for ARM-based processor
+architectures, this initialization routine resolves to an empty function
+block.</p>
+<p>The routine pti_init() serves as the final sub-routine executed at the
+conclusion of the mm_init() sequence. pti_init() represents the core
+initialization handler for the Kernel Page Table Isolation (KPTI)
+mechanism, a defense infrastructure introduced to mitigate the
+catastrophic Meltdown processor vulnerability. The central design
+philosophy of this framework is to enforce strict boundaries restricting
+the visible memory map exposed to user space. When a process executes
+within user space, the page translation tables mask out the kernel
+address space, exposing only a minimal, strictly necessary subset of
+kernel helper addresses. The full, unrestricted address space mapping
+topology is securely restored only when the process explicitly
+transitions back into kernel-space execution through a system call or
+hardware exception vector.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="15.13 Memory Resource Controller.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="chapter_16.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="15.13 Memory Resource Controller.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="chapter_16.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

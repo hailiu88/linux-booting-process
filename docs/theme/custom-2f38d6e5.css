@@ -1,0 +1,105 @@
+/* 让底部版权信息大小适中、清晰可读 */
+.custom-book-footer {
+    font-size: 13px !important;       /* 固定像素字号，确保不会太小 */
+    color: var(--fg) !important;      /* 100% 使用主题文字颜色 */
+    opacity: 0.85 !important;         /* 提高不透明度到 85%，确保字迹清晰不刺眼 */
+    text-align: center;               /* 居中对齐 */
+    margin-top: 3rem;                 /* 与上方正文拉开安全距离 */
+    padding-top: 1.2rem;              /* 增加分割线内边距 */
+    line-height: 1.6;                 /* 增大行高，防止两行字挤在一起 */
+    border-top: 1px solid var(--table-border-color); /* 顶部的淡灰色分割线 */
+}
+
+/* 专门加深加粗需要强调的警告字眼 */
+.custom-book-footer strong {
+    color: #ef3934 !important;        /* 给“未经授权严禁商用”赋予醒目的暗红色（或警告色） */
+    opacity: 1 !important;            /* 警告文字 100% 全显，绝对清晰 */
+}
+
+/* ================= mdBook & ePub 专属：单行正文防伪水印 ================= */
+
+/* 1. 精准锁定右侧正文段落，确立层级基准 */
+#content main p, .page p, p {
+    position: relative !important;
+    z-index: 1 !important; /* 确保正文真实的文字浮在最上面 */
+}
+
+/* 2. 适配白天模式（Light/Rust/Sepia） */
+#content main p::before, .page p::before, p::before {
+    /* 核心：这里是您要显示的单行防伪文字，\A 代表不生效，保持单行 */
+    content: "广州易乐舒信息技术有限公司" !important;
+    
+    /* 采用绝对定位，使其死死钉在每一个段落骨架的轴心 */
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) rotate(30deg) !important; /* 居中并微微倾斜 15 度，更显高级 */
+    
+    /* 关键：强制把水印文字塞到正文文字的【最底层/后面】，绝对不遮挡阅读 */
+    z-index: -1 !important; 
+    
+    /* 样式与排版 */
+    font-size: 6rem !important;      /* 适中的单行大字号 */
+    font-family: FangSong, "FangSong", "仿宋", "仿宋_GB2312", STFangsong, "华文仿宋", serif !important;
+ !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;    /* 键鼠穿透：不干扰用户正常的网页划词和复制 */
+    
+    /* 核心调色：亮色模式下 3.5% 的极淡灰色，兼顾防伪与阅读体验 */
+    color: rgba(0, 0, 0, 0.03) !important; 
+    display: block !important;
+}
+
+/* 3. 专门适配 mdBook 网页端的深色/夜间模式（Dark, Coal, Navy） */
+/* 当网页切换成黑底时，自动转换为极淡的 2% 白光字影，护眼不刺眼 */
+.mdbook-dark p::before, .coal p::before, .navy p::before {
+    color: rgba(255, 255, 255, 0.03) !important; 
+}
+
+/* ================= 全书防复制：彻底禁用划词与右键 ================= */
+#content main, .page, p, body {
+    /* 核心：禁用鼠标选中文本（兼容所有现代浏览器和阅读器内核） */
+    -webkit-user-select: none !important; /* Safari */
+    -moz-user-select: none !important;    /* Firefox */
+    -ms-user-select: none !important;     /* IE/Edge */
+    user-select: none !important;          /* 标准浏览器 */
+    
+    /* 核心：彻底禁用长按或鼠标右键弹出的上下文菜单/划词气泡（主要针对手机端和部分阅读器） */
+    -webkit-touch-callout: none !important; 
+/* 移除正文内容区域的最大宽度限制 */
+.page .content, 
+.content main {
+    max-width: 100% !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+}
+
+/* 如果您希望页脚（footer）也跟着一起占满全屏 */
+footer, .custom-book-footer {
+    max-width: 100% !important;
+}
+/* 调整正文的所有文字大小（默认通常是 16px 左右） */
+.content main {
+    font-size: 24px !important; /* 将 18px 修改为您想要的数字 */
+    line-height: 1.6;           /* 推荐同步调整行高，让阅读更舒适 */
+}
+
+/* 调整自定义页脚的字体大小及整体样式 */
+.custom-book-footer {
+    font-size: 18px !important;        /* 调整字体大小，通常页脚 12px-14px 比较合适 */
+    line-height: 1.6 !important;       /* 增加行高，防止多行文本重叠 */
+    color: #666666 !important;         /* 调整文字颜色为暗灰色，弱化视觉，符合国际规范 */
+    margin-top: 40px !important;       /* 增加页脚与上方正文的间距 */
+    border-top: 1px solid #e0e0e0;     /* 可选：在页脚上方加一条淡灰色的分割线 */
+    padding-top: 15px !important;      /* 分割线与页脚文字的内边距 */
+}
+
+/* 如果需要，也可以单独微调页脚内邮箱链接的字体大小 */
+.custom-book-footer a {
+    font-size: 18px !important;
+    text-decoration: none;             /* 移除链接下划线，让界面更干净 */
+}
+
+.custom-book-footer a:hover {
+    text-decoration: underline;        /* 鼠标悬停时才显示下划线 */
+}

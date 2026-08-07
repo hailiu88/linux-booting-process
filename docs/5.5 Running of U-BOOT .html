@@ -1,0 +1,651 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Running of U-BOOT - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/5.5 Running of U-BOOT .md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="55-running-of-u-boot"><a class="header" href="#55-running-of-u-boot">5.5 Running of U-BOOT</a></h2>
+<h3 id="551-u-boot-top-level-loop"><a class="header" href="#551-u-boot-top-level-loop">5.5.1 U-BOOT Top-Level Loop</a></h3>
+<p>The final pointer within the init_sequence_r array must target the
+run_main_loop function, shifting the system state into an infinite
+execution loop that waits for user command inputs. The run_main_loop()
+function is defined inside board_init_r.c and is structured as the
+following infinite for loop that sequentially invokes main_loop():</p>
+<pre><code>static int run_main_loop(void)
+{
+#ifdef CONFIG_SANDBOX
+	sandbox_main_loop_init();
+#endif
+	for (;;)
+		main_loop();
+	return 0;
+}
+
+</code></pre>
+<p>The main_loop() function is defined within git/common/main.c, and its
+implementation code is structured as follows:</p>
+<pre><code>void main_loop(void)
+{
+	const char *s;
+	bootstage_mark_name(BOOTSTAGE_ID_MAIN_LOOP, "main_loop");
+	if (IS_ENABLED(CONFIG_VERSION_VARIABLE))
+		env_set("ver", version_string); /* set version variable */
+	cli_init();
+	if (IS_ENABLED(CONFIG_USE_PREBOOT))
+		run_preboot_environment_command();
+	if (IS_ENABLED(CONFIG_UPDATE_TFTP))
+		update_tftp(0UL, NULL, NULL);
+	s = bootdelay_process();
+	if (cli_process_fdt(&amp;s))
+		cli_secure_boot_cmd(s);
+	autoboot_command(s);
+	cli_loop();
+	panic("No CLI available");
+}
+
+</code></pre>
+<p>Its primary function is to initialize the command-line interface (CLI)
+routines, fetch the countdown delay duration via bootdelay_process(),
+and evaluate the target bootcmd environment variable. The bootcmd
+variable stores an execution macro or script composed of sequential
+U-BOOT commands that control how U-BOOT boots the Linux kernel. (The
+countdown delay can be tuned dynamically via the autodelay environment
+variable, or specified directly within the Device Tree using the
+bootdelay integer property, among other configurations). The operational
+flow of the main_loop() function alongside a streamlined representative
+slice of the underlying bootcmd script macro is presented below:</p>
+<center>
+<figure>
+<img src="./media/image29.png" style="width:100%;
+height:auto" />
+<figcaption>
+<p>Figure 5-11 main_loop() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<pre><code>bootcmd=run findfdt;
+run findtee;
+mmc dev ${mmcdev};
+if mmc rescan; 
+    then if run loadbootscript; 
+            then run bootscript; 
+         else if run loadimage; 
+             then run mmcboot; 
+           else run netboot; 
+           fi; 
+         fi; 
+else run netboot; 
+fi
+loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}
+loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}
+loadtee=fatload mmc ${mmcdev}:${mmcpart} ${tee_addr} ${tee_file}
+mmcboot=echo Booting from mmc ...; 
+run mmcargs; 
+if test ${tee} = yes; 
+    then run loadfdt; 
+         run loadtee; 
+         bootm ${tee_addr} - ${fdt_addr}; 
+else if test ${boot_fdt} = yes || test ${boot_fdt} = try; 
+	then if run loadfdt; 
+             	then bootz ${loadaddr} - ${fdt_addr}; 
+          else if test ${boot_fdt} = try; 
+            		then bootz; 
+          		else echo WARN: Cannot load the DT;
+            	fi; 
+            fi; 
+	else bootz; 
+	fi;
+fi;
+</code></pre>
+<p>U-BOOT initially executes the statement run findfdt to process the
+findfdt macro script. The findfdt macro performs an array of sequential
+test criteria matching the live motherboard configuration to dynamically
+resolve and populate the baseline value for the fdt_file environment
+variable. For brevity, the granular algorithmic details of the findfdt
+script are omitted here. The fdt_file variable registers the
+corresponding compiled Device Tree Blob filename matching the physical
+board; for the imx6qp_sabreauto development board, this evaluates
+explicitly to fdt_file = imx6qp-sabreauto.dtb. Concurrently, bootcmd
+runs run findtee to invoke the findtee macro script, which checks for
+the platform-specific Trusted Execution Environment (TEE) binary payload
+filename, assigning it to tee_file. Because the imx6qp_sabreauto board
+implements the uTee-6qpauto hardware security manager firmware, this
+resolves to tee_file = uTee-6qpauto.</p>
+<p>The explicit instruction mmc dev ${mmcdev} configures the active MMC
+host slot indexed by ${mmcdev} as the primary system boot media target.</p>
+<p>When the platform executes a Linux kernel launch sequence originating
+from an SD card, U-BOOT shifts execution into the run mmcboot macro
+path. The underlying mmcboot macro runs the child loadimage script,
+invoking the standard U-BOOT fatload utility block to copy the kernel
+binary target defined by ${image} from the designated boot partition
+coordinates (specified explicitly via mmc ${mmcdev}:${mmcpart}) into
+the physical RAM destination address configured by ${loadaddr}.
+Following an identical operational framework, the overarching bootcmd
+macro pulls the target .dtb file and the secure .tee firmware payload
+into their designated physical memory targets. In this operational
+context, ${image} maps to a compressed zImage kernel envelope. The
+absolute boundary coordinates for ${fdt_addr}, ${loadaddr}, and
+${tee_addr} are hardcoded or adjusted inside the board architecture
+configuration header files. Finally, the boot execution sequences
+handled by the trailing macros—specifically bootm ${tee_addr} -
+${fdt_addr} or bootz ${loadaddr} - ${fdt_addr}—execute the
+definitive jump into the Linux kernel initialization path.</p>
+<p>The bootcmd macro string is maintained directly within U-BOOT’s
+persistent non-volatile environment space; its default fallback string
+value is established at compile time within the generic platform
+configuration templates located at
+git/include/configs/&lt;board_common&gt;.h. End-users can interrupt the
+automatic autoboot countdown sequence to drop into the interactive
+U-BOOT command-line shell, modify the configuration properties of
+bootcmd manually, and commit the updated script permanently to flash
+blocks via the saveenv routine.</p>
+<p>If the active Device Tree configuration implements a custom bootcmd node
+property block, the parsing routines inside main_loop() interrogate the
+tree to verify whether an explicit bootsecure enforcement flag has been
+enabled. If the bootsecure flag is active, the system branches
+immediately into an unreturned secure encrypted boot execution routine
+(cli_secure_boot_cmd). If the verification pass confirms standard
+booting operations, execution control passes to the autoboot_command()
+block. The autoboot_command() function evaluates the live tracking timer
+parameters alongside the console UART inputs to check if a user
+keystroke has been registered. If the timeout delay expires without
+catching an active keyboard interrupt vector, it calls
+run_command_list() to interpret and run the compiled bootcmd command
+sequence fetched by the bootdelay_process() routine. Conversely, if a
+valid keystroke is caught during the active countdown delay window, the
+state machine diverts into the cli_loop() function block, initializing
+the persistent shell loop to parse, interpret, and execute incoming text
+commands manually supplied by the developer.</p>
+<h3 id="552-u-boot-command-interpretation"><a class="header" href="#552-u-boot-command-interpretation">5.5.2 U-BOOT Command Interpretation</a></h3>
+<p>The run_command_list function parses U-BOOT scripts. U-BOOT can evaluate
+scripts or commands using either the legacy simple parser or the HUSH
+parser (detailed in subsequent sections). When configured for the simple
+interpretation path, it invokes cli_simple_run_command_list to process
+the script. The C implementation code for run_command_list under this
+simple interpretation profile is structured as follows:</p>
+<pre><code>int run_command_list(const char *cmd, int len, int flag)
+{
+    int need_buff = 1;
+    char *buff = (char *)cmd; /* cast away const */
+    int rcode = 0;
+    if (len == -1) {
+        len = strlen(cmd);
+        need_buff = strchr(cmd, '\n') != NULL;
+    }
+    if (need_buff) {
+        buff = malloc(len + 1);
+        if (!buff)
+            return 1;
+        memcpy(buff, cmd, len);
+        buff[len] = '\0';
+    }
+    rcode = cli_simple_run_command_list(buff, flag);
+    if (need_buff)
+        free(buff);
+    return rcode;
+}
+</code></pre>
+<p>This code first calculates the length of the cmd string (passed
+dynamically to cmd via the bootcmd variable within the main_loop). If
+the cmd string encapsulates newline characters ('\n'), the routine
+allocates a dynamic buffer, replaces occurrences of '\n' with null
+terminators ('\0'), copies the command block into this isolated
+buffer memory, and finally invokes cli_simple_run_command_list to
+execute the script referenced by buff.</p>
+<h3 id="553-u-boot-command-execution"><a class="header" href="#553-u-boot-command-execution">5.5.3 U-BOOT Command Execution</a></h3>
+<p>The functional role of cli_simple_run_command_list() is to split the
+script pointed to by cmd into distinct sub-units delimited by newline
+boundaries ('\n'), and then sequentially call
+cli_simple_run_command() to execute each unit's command string.
+cli_simple_run_command() parses the text stream provided by
+cli_simple_run_command_list and sections it into multiple tokens
+separated by semicolons (;).</p>
+<p>If any tokens contain macros wrapped inside ${} or $(), the routine
+calls cli_simple_process_macro() to dynamically substitute the macros
+with their current expanded environment values. It then leverages
+cli_simple_parse_line() to tokenize the expanded string into an array of
+individual, whitespace-delimited argument variables.</p>
+<p>These resolved variables are stored sequentially inside the argv array,
+where argv[0] holds the primary command binary string, and subsequent
+entries like argv[1] map to the trailing arguments passed to the
+utility; the total argument count is registered inside the integer
+variable argc. Finally, cli_simple_run_command() calls cmd_process() to
+execute the explicit command specified by argv[0].</p>
+<p>The cmd_process() function first leverages find_cmd(argv[0]) to query
+the internal link-time command table for a matching tracking entry
+corresponding to argv[0]. If a valid entry is resolved, it passes the
+command's structural argument count and argument vector array over to
+the cmd_call() infrastructure to execute the operation. Within the
+source file git/cmd/bootm.c, a core macro declaration is defined as
+follows:</p>
+<pre><code>U_BOOT_CMD(bootm, CONFIG_SYS_MAXARGS, 1, do_bootm, 
+  "boot application image from memory", bootm_help_text);
+</code></pre>
+<p>This macro architecture is defined within the core header file
+git/include/command.h. In this declaration, bootm specifies the text
+command string, CONFIG_SYS_MAXARGS defines the maximum argument
+threshold permitted by the utility, 1 indicates that hitting the
+carriage return key will repeat the execution of the previous command
+string, and do_bootm acts as the definitive C callback handler function
+pointer. When an operator issues the bootm string, U-BOOT handles the
+invocation by executing the underlying C function do_bootm. The string
+"boot application image from memory" provides a short summary
+description, while bootm_help_text stores the exhaustive help
+documentation.</p>
+<p>Expanding this structural macro shows that the statement expands to the
+following link-time initialization code:</p>
+<pre><code>ll_entry_declare(cmd_table_t, bootm, do_bootm) = {
+    "bootm", CONFIG_SYS_MAXARGS, cmd_always_repeatable, do_bootm, "boot application image from memory", bootm_help_text, NULL
+};
+</code></pre>
+<p>The compilation layout defines a unique static tracking structure of
+type struct cmd_tbl named _u_boot_list_2_cmd_2_bootm, which is placed
+within the custom linker section .u_boot_list_2_cmd_2_bootm. The final
+generated variable assignment maps to the following definition:</p>
+<pre><code>struct cmd_tbl _u_boot_list_2_cmd_2_bootm = {
+    .name       = "bootm",                                   // Command string token
+    .maxargs    = CONFIG_SYS_MAXARGS,                        // Maximum parameter count threshold
+    .repeatable = 1,                                         // Repeatable execution flag on Enter keypress
+    .cmd        = do_bootm,                                  // Function pointer: target logic execution loop
+    .usage      = "boot application image from memory",     // Short description string (shown by generic 'help')
+    .help       = bootm_help_text,                          // Long description string (shown by 'help bootm')
+    .complete   = NULL                                       // Auto-completion hook callback (Null assigned here)
+};
+</code></pre>
+<p>This mechanism links the command registry key "bootm" directly to the
+do_bootm C routine. The structural execution architecture tracking the
+run_command_list function is mapped out in the technical flowchart
+below:</p>
+<center>
+<figure>
+<img src="./media/image30.png" style="width:70%;
+height:auto" />
+<figcaption>
+<p>Figure 5-12 run_command_list() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>When launching a Linux kernel from an attached SD card, the cmd_call()
+infrastructure invokes cmd_always_repeatable(), which subsequently
+triggers the execution entry point of do_bootm(). Consequently,
+cmd_call() routes execution straight into do_bootm() to drive the final
+Linux booting sequence forward.</p>
+<p>If the platform is compiled to leverage an early pre-boot environment
+pathway, the main_loop processes the pre-boot commands before parsing
+other variables. Furthermore, if network-based recovery configurations
+are enabled, the main_loop invokes upstream network protocols using the
+TFTP framework to pull down and flash updated U-BOOT and Linux kernel
+images before continuing routine execution loops.</p>
+<h3 id="554-command-processing-and-execution"><a class="header" href="#554-command-processing-and-execution">5.5.4 Command Processing and Execution</a></h3>
+<p>At its termination phase, the main_loop function transitions into the
+interactive command-line interface framework loop (cli_loop), where it
+pauses to capture manual command strings supplied by the operator or
+awaits the expiration of the autoboot countdown delay vector to initiate
+the automated booting pathway.</p>
+<p>The cli_loop() function is defined within the source file
+git/common/cli.c, and its technical implementation is structured as
+follows:</p>
+<pre><code>void cli_loop(void)
+{
+	bootstage_mark(BOOTSTAGE_ID_ENTER_CLI_LOOP);
+#ifdef CONFIG_HUSH_PARSER
+	parse_file_outer();
+	/* This point is never reached */
+	for (;;);
+#elif defined(CONFIG_CMDLINE)
+	cli_simple_loop();
+#else
+	printf("## U-BOOT command line is disabled. Please enable CONFIG_CMDLINE\n");
+#endif /*CONFIG_HUSH_PARSER*/
+}
+</code></pre>
+<p>The system is architected to parse operator commands utilizing either
+the Bourne-shell-compatible HUSH parser or the legacy simple interface
+engine; the targeted translation model is explicitly dictated at build
+time via preprocessor configuration flags. The structural parsing of an
+incoming command line string is a sequential process of stream scanning
+and string tokenization. Because the underlying logic is linear, it is
+omitted here; interested developers can audit the parsing routines
+maintained inside git/common/cli_hush.c or git/common/cli_simple.c. To
+establish a baseline reference model, the utility execution pipeline is
+illustrated here by analyzing the workflow of the cli_simple_loop()
+sub-routine.</p>
+<p>The cli_simple_loop() function is implemented as an infinite for(;;)
+execution loop. Inside this infinite loop block, the engine polls the
+active console device to sample user inputs and subsequently parses the
+captured string. If the token validation pass confirms a legal command
+structure, the system triggers the underlying execution logic mapped to
+that utility. Concurrently, it commits the verified command string to a
+localized history buffer, enabling the user to traverse and re-execute
+historical command vectors using the terminal's up and down arrow keys.
+Once the routine concludes, it recycles its tracking flags and returns
+to a block-waiting state to catch subsequent text streams.</p>
+<p>U-BOOT exports an exceptionally rich and comprehensive suite of native
+utilities, predominantly categorized into hardware telemetry information
+gathering, low-level memory block manipulation, non-volatile flash
+programming, runtime execution flow control, transport layer network
+stack management, and environment variable manipulation, alongside
+generalized hardware interface control and bare-metal debugging
+routines. Furthermore, the bootloader incorporates structural
+abstraction layers supporting standard Linux file systems.</p>
+<p>Leveraging this combined framework of commands and environment
+variables, U-BOOT exercises absolute control over the Linux kernel
+loading topology and boot pathways, allowing developers to configure and
+test custom hardware setups interactively. When U-BOOT is resting in its
+command interpreter state, executing the printenv utility dumps a full
+listing of all active global environment variables to the console
+terminal, exposing the precise booting vectors under which the current
+platform is running.</p>
+<p>The programmatic definitions declaring these U-BOOT commands are
+distributed across distinct C resource files clustered within the
+git/cmd/, git/lib/, and git/common/ directories of the source tree. A
+single source module can isolate a standalone monolithic command
+definition or aggregate multiple related sub-commands into a unified
+register table. Developers seeking deep structural details regarding
+particular command arrays can audit the corresponding C source targets
+contained within those paths.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="5.4 Post-Relocation Initialization (board_init_r).html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="5.6 Booting the Linux Kernel.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="5.4 Post-Relocation Initialization (board_init_r).html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="5.6 Booting the Linux Kernel.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

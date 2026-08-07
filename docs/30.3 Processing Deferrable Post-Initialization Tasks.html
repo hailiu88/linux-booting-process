@@ -1,0 +1,1135 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Processing Deferrable Post-Initialization Tasks - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/30.3 Processing Deferrable Post-Initialization Tasks.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="303-processing-deferrable-post-initialization-tasks"><a class="header" href="#303-processing-deferrable-post-initialization-tasks">30.3 Processing Deferrable Post-Initialization Tasks</a></h2>
+<p>The kernel_init() thread immediately dispatches kernel_init_freeable()
+to coordinate outstanding, low-level core operating system bootstrap
+tasks. At this explicit checkpoint, Process 1 (PID 1) remains entirely
+within privileged kernel execution space to process final system
+configurations. This phase acts as the final setup pass executed by
+Process 1 before it transforms into the user-space initialization daemon
+(systemd), and constitutes the definitive final puzzle piece of the
+start_kernel() boot lineage [30.1, 30.2]. This function is hosted
+within the central initialization source file git/init/main.c, and its
+definition is implemented as follows:</p>
+<pre><code>static noinline void __init kernel_init_freeable(void)
+{
+	wait_for_completion(&amp;kthreadd_done);
+	gfp_allowed_mask = __GFP_BITS_MASK;
+	set_mems_allowed(node_states[N_MEMORY]);
+	cad_pid = task_pid(current);
+	smp_prepare_cpus(setup_max_cpus);
+	workqueue_init();
+	init_mm_internals();
+	rcu_init_tasks_generic();
+	do_pre_smp_initcalls();
+	lockup_detector_init();
+	smp_init();
+	sched_init_smp();
+	padata_init();
+	page_alloc_init_late();
+	page_ext_init();
+	do_basic_setup();
+	kunit_run_all_tests();
+	console_on_rootfs();
+
+	if (init_eaccess(ramdisk_execute_command) != 0) {
+		ramdisk_execute_command = NULL;
+		prepare_namespace();
+	}
+	integrity_load_keys();
+}
+</code></pre>
+<p>This function executes outstanding core initialization passes and
+stabilizes the global platform execution parameters to prepare for
+user-space environment initialization. Because this routine coordinates
+an extensive volume of low-level subsystem adjustments, its functional
+stages are broken down across two distinct analytical subsections.</p>
+<p>The function first invokes the synchronization primitive
+wait_for_completion(&amp;kthreadd_done) to stall execution until Process 2
+(kthreadd) stands fully operational. Because the execution loops of
+kernel_init_freeable() are preparing to spawn a large catalog of
+asynchronous, background kernel threads—all of which must be
+aggregated, orchestrated, and spawned exclusively via the jurisdiction
+of the kthreadd daemon—Process 1 must block until Process 2 registers
+as fully ready [30.1]. The moment Process 2 completes its internal
+configuration loops, the rest_init() sequence dispatches a completion
+broadcast via complete(&amp;kthreadd_done) to unlock this path [30.1].</p>
+<p>The tracking bitmask gfp_allowed_mask serves as the master, global
+control switch regulating precisely which Get Free Page (GFP) memory
+allocation zone and policy capability flags are authorized for use
+across the kernel. Assigning this flag to evaluate precisely as
+__GFP_BITS_MASK signals that the memory management subsystem is
+officially opened to fulfill requests under any legitimate combination
+of allocation masks [25.3].</p>
+<p>The invocation of set_mems_allowed() modifies the .mems_allowed memory
+node bitmask tracking field enclosed within the current active
+task_struct, programmatically authorizing Process 1 to target and
+harvest memory pages from any valid, memory-populated physical NUMA node
+across the entire platform topology [25.4, 26.6].</p>
+<p>Following these baseline adjustments, the function systematically
+dispatches the initialization handlers for several core system modules,
+which encompass:</p>
+<ul>
+<li>
+<p>Concurrency Workqueue Subsystem Initialization:</p>
+<ul>
+<li>
+<p>NUMA-Affinity Binding: Automatically aligns and maps the distinct,
+asynchronous execution pools (worker_pool) to their respective
+physical NUMA nodes, ensuring that background workers preferentially
+harvest pages and execute caches from adjacent memory banks [17.2,
+25.4].</p>
+</li>
+<li>
+<p>Rescuer Kthread Provisioning: Searches out tracking queues decorated
+with the WQ_MEM_RECLAIM operational flag to instantiate a dedicated
+emergency rescue thread context. Whenever extreme systemic memory
+pressure compromises the system's ability to spawn fresh worker
+threads, the engine activates this rescuer thread to drain the work
+item queues, preventing critical execution paths from deadlocking
+[17.2].</p>
+</li>
+<li>
+<p>Spawning Initial Workers: Carves out the absolute first background
+worker threads (kworker daemons) across each independent pool,
+enabling the queued, deferred work items awaiting evaluation to
+commence active execution [17.2].</p>
+</li>
+<li>
+<p>Enabling the Workqueue Watchdog: Activates a specialized monitoring
+watchdog thread. If an erring or un-synchronized work item
+continuously hogs a CPU core beyond a predefined execution threshold
+window, the watchdog framework intercepts the anomaly and logs an
+immediate system warning [17.2].</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Memory Management Core Internal Data Structures Initialization:</p>
+<ul>
+<li>
+<p>Dedicated Reclamation Queuing: Instantiates specialized internal
+memory-tracking execution queues, mathematically guaranteeing that
+background physical memory page reclamation and harvesting tasks
+retain full capability to run under any resource constraint
+[24.3].</p>
+</li>
+<li>
+<p>Registering Hotplug CPU Callback Arrays: Hooks dynamic state
+transition structures into the CPU hotplug framework to handle
+localized memory accounting counter initializations and sweeps
+whenever a processor core changes state [21.2].</p>
+</li>
+<li>
+<p>Synchronizing Node Online Status: Refreshes and updates the active
+processor state maps for every online CPU core tracking across the
+system's physical memory nodes [25.3].</p>
+</li>
+<li>
+<p>Activating the Shepherd Timer: Boots the centralized shepherd
+scheduling timer framework. If the localized memory transaction
+counters assigned to an individual CPU core bottleneck or pool
+un-synchronized deltas too long, the shepherd thread forcefully
+flushes and syncs those metrics up into the system-wide global
+tracking registers [25.3].</p>
+</li>
+<li>
+<p>Exposing Debugging Telemetry: Exposes high-performance virtual
+lookup nodes under the /proc filesystem tree, allowing user-space
+administrators to audit low-level physical page layouts via commands
+like cat /proc/buddyinfo [28.1].</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Task-Scoped RCU (Task RCU) Mechanism Initialization:</p>
+<ul>
+<li>
+<p>Standard Task RCU Daemons: Spawns the dedicated background RCU
+threads responsible for managing and executing grace period
+recycling sequences over transient memory buffers allocated to
+trampoline instructions, such as those utilized by ftrace [19.2,
+19.3].</p>
+</li>
+<li>
+<p>Rude Task RCU Threads: Instantiates the specialized "Rude RCU"
+daemon contexts, which are engineered to forcefully flush out grace
+periods by driving context-switch checkpoints across completely
+non-preemptible execution zones [19.2].</p>
+</li>
+<li>
+<p>BPF Memory Reclamation Engines: Spawns the independent background
+worker threads optimized specifically to orchestrate memory
+recycling and reclamation loops supporting sleepable BPF program
+code allocations [19.2].</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Executing Early Core Initcalls:</p>
+<ul>
+<li>Triggers the highest-priority compiler-arranged initialization
+sub-routines (initcalls) prior to activating secondary multi-core
+operations. The low-level routine do_one_initcall() is
+systematically evaluated to process individual early initialization
+functions whose tracking segments are bounded between the linker
+symbols __start_initcall (or alternative __initcall_start) and
+__initcall0_start (the explicit registry mapping out
+early_initcall registrations) [19.4, 19.5].</li>
+</ul>
+</li>
+<li>
+<p>Lockup and System Stall Detector Initialization:</p>
+<ul>
+<li>
+<p>Soft-Lockup Watchdogs: Spawns an exceptionally high-priority
+background tracking thread named following the format watchdog/[X]
+on every individual CPU core, which is tasked with periodically
+touching an atomic timestamp register to "feed the dog" [21.2].</p>
+</li>
+<li>
+<p>Hard-Lockup NMI Watchdogs: Calibrates hardware performance counters
+to periodically assert Non-Maskable Interrupts (NMIs). Because an
+NMI override vector commands top-tier architectural priority, even
+under critical execution failure states where a thread has locked a
+core with local hardware interrupts completely disabled, the NMI can
+cleanly break through the stall to output an exhaustive register
+backtrace log via panic or warning channels [20.4, 23.2].</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>The function smp_init() activates every single non-boot secondary
+processor core (Secondary CPUs) residing on the silicon die, ensuring
+that the entire multi-core matrix is transitioned into a fully
+operational status while constructing the synchronized cross-processor
+scheduling data nodes [17.3, 21.2]. It executes across the following
+microarchitectural steps:</p>
+<ol>
+<li>
+<p>Dispatches idle_threads_init() to pre-allocate and configure an
+isolated, private idle process context for each individual secondary
+processor core down the line [30.1].</p>
+</li>
+<li>
+<p>Invokes cpuhp_threads_init() to initialize the dedicated background
+thread contexts that drive the internal state machines of the CPU
+hotplug framework [21.2, 28.4].</p>
+</li>
+<li>
+<p>Calls bringup_nonboot_cpus(), which propagates a sequence of
+Inter-Processor Interrupt (IPI) wakeup signals or vendor-specific
+hardware initialization sequences across the bus to forcefully
+awaken and boot the remaining offline secondary cores [21.2,
+23.4].</p>
+</li>
+<li>
+<p>Evaluates smp_cpus_done() to complete final architecture-dependent
+multi-processor configurations, such as tuning Memory Type Range
+Registers (MTRRs) or executing cross-core L1/L2 cache coherency
+synchronization sweeps on x86 platforms [29.4].</p>
+</li>
+</ol>
+<p>The kernel exposes two decoupled structural variations of the scheduler
+multi-core initialization function sched_init_smp(), which are toggled
+at compile time based on the state of the configuration flag CONFIG_SMP
+[17.3]. Under uniprocessor configurations where multi-core operations
+are disabled, the routine compiles a highly minimalist fallback stub
+that merely defines baseline scheduling granularities.</p>
+<p>Conversely, contemporary production-grade operating system images
+compile the full symmetric multiprocessing (SMP) variant, whose internal
+microarchitectural orchestration code is vastly more complex. This
+symmetric version of sched_init_smp() is hosted within the central task
+scheduling core file git/kernel/sched/core.c, and its primary functional
+milestones include:</p>
+<ul>
+<li>
+<p>Detecting and Mapping the Physical Multi-Core Memory Topology via
+sched_init_numa():<br>Initializes the system's global NUMA topology trackers,
+mathematically proving that the core task scheduler remains
+comprehensively aware of the absolute hardware proximity bridging
+explicit CPU cores to their nearest backing physical memory nodes.
+This structural alignment allows the engine to maximize low-latency
+localized memory resource allocations [25.4, 28.4].</p>
+</li>
+<li>
+<p>Constructing the Hierarchical Scheduling Domains via
+sched_init_domains():<br>Parses the active processor tracking bitmask cpu_active_mask (the
+runtime catalog of active, online CPU cores) to compile a multi-tiered
+hierarchical scheduling tree composed of Simultaneous Multithreading
+(SMT) tracking layers, Core-Module (MC) balancing layers, and
+multi-socket NUMA coordination layers [17.3, 21.2]. Within this
+integrated grid, the SMT layer handles high-speed load balancing
+across internal hardware sibling hyper-threads, the MC layer
+orchestrates thread migration across separate physical cores on a
+single silicon die, and the NUMA layer regulates task distributions
+across independent hardware sockets.</p>
+</li>
+<li>
+<p>Altering Process Core Affinity Bitmasks via set_cpus_allowed_ptr():<br>Forcefully migrates the execution context of the active Process 1
+(init) away from any hardware core designated for resource isolation
+over to a designated system housekeeper (Housekeeping) core [26.6,
+28.3]. This configuration pass guarantees that foundational operating
+system background processes will never encroach upon or consume
+processing cycles on CPU cores strictly reserved to run low-latency,
+hard real-time tasks or dedicated high-performance application loops.</p>
+</li>
+<li>
+<p>Initializing Top-Tier Task Scheduling Classes:<br>Dispatches the helper interfaces init_sched_rt_class() and
+init_sched_dl_class() to bootstrap the underlying scheduling
+structures and runqueue matrices dedicated to handling the Real-Time
+(RT) scheduling class and the strict Deadline (DL) scheduling class,
+respectively [17.3].</p>
+</li>
+<li>
+<p>Promoting the Multi-Core Scheduling Status Key:<br>Toggles the system-wide global flag variable sched_smp_initialized =
+true. Promoting this bit flag marks a vital milestone in the system's
+bootstrap timeline, notifying the kernel that the task scheduler has
+successfully switched from a restricted, uniprocessor single-core
+scheduling layout over to a comprehensive, multi-core asymmetric
+load-balancing scheduler framework [17.3].</p>
+</li>
+</ul>
+<p>The execution of the functions padata_init(), page_alloc_init_late(),
+and page_ext_init() represents the definitive finalization phase for the
+core virtual memory management system [24.3, 25.3]. While the earlier
+memory initialization modules focused strictly on bootstrapping the
+foundational allocators, initializing the tracking structures, and
+building the page tables, these late-stage routines leverage the fact
+that the system has safely switched into multi-core multiprocessing mode
+to instantiate advanced auxiliary tracking frameworks and functional
+optimization extensions, maximizing performance and reducing initial
+boot latency [17.3]. For instance, on server-grade enterprise hardware
+architectures hosting massive amounts of physical memory, the kernel
+intentionally defers the initialization of non-essential page ranges
+during early boot to accelerate startup velocity; these deferred pages
+are systematically processed here [25.3]. Concurrently, the engine
+evaluates the discovered physical CPU topology to fine-tune the
+localized per-CPU page allocation caching limits (PCP) corresponding to
+each core [25.3].</p>
+<p>The routine padata_init() structures the infrastructure required to
+support multi-core parallel data processing (frequently consumed by
+cryptographic or network layers), focusing heavily on registering CPU
+hotplug state steps and dynamically pre-allocating asynchronous work
+item lists [17.2, 21.2]. It executes the following milestones:</p>
+<ul>
+<li>
+<p>Hotplug Callback Registration: Registers the dynamic state transition
+hooks padata_cpu_online and padata_cpu_dead within the central hotplug
+core [21.2]. While the early boot memory setups tracked exclusively
+the active primary bootstrap CPU core, the padata subsystem must
+accommodate future topology mutations. If an administrator dynamically
+attaches or extracts a CPU core at runtime, the parallel task
+distribution logic is adjusted instantly, preventing the engine from
+dispatching work descriptors to a non-existent hardware target.</p>
+</li>
+<li>
+<p>Proactive Resource Pre-allocation: Invokes kmalloc_array() to carve
+out a continuous block of memory from the heap sized to hold an array
+of padata_work structures scaled relative to the possible CPU core
+count resolved via numable_possible_cpus().</p>
+</li>
+<li>
+<p>Vacant List Optimization: Chains these freshly allocated work
+descriptors onto a centralized free list named padata_free_works to
+serve as a high-speed scratchpad repository. This follows a classic
+microarchitectural pooling design pattern: by pre-staging ready
+descriptors in memory, subsequent high-frequency cryptographic
+encryption passes or network packet filtering loops can instantly
+harvest objects locklessly, completely bypassing the allocation
+overhead and temporal jitter of dynamic heap allocations.</p>
+</li>
+</ul>
+<p>The principal technical task of page_alloc_init_late() is to execute
+deferred memory initialization passes over the remaining physical memory
+page frames, while systematically dismantling the primitive boot-stage
+memblock allocator. Its internal execution paths process the following
+milestones:</p>
+<ul>
+<li>
+<p>Processing Deferred Memory Initialization: Throughout the earliest
+phases of system bootstrap, the kernel is forced to construct a
+unique, memory-resident tracker structure (struct page) for every
+single physical page frame present on the machine [25.3]. This
+structural configuration loop is exceptionally time-consuming and
+historically caused deep-freeze delays on high-capacity servers. To
+optimize this path, the early boot engine initializes merely a small
+fraction of memory required to spin up the system, while this
+late-stage routine calls kthread_run() to spawn an independent,
+background kernel thread named pgdatinit for each individual memory
+node, mapping their execution entry targets to the handler
+deferred_init_memmap [30.1]. These threads leverage the machine's
+multi-core parallel processing capabilities to initialize the residual
+memory page frames concurrently. The invocation of
+wait_for_completion() guarantees that Process 1 blocks until all
+physical page frames are fully initialized and ready before
+authorizing the remaining boot steps to advance.</p>
+</li>
+<li>
+<p>Recalibrating Per-CPU Page Allocator Limits: Dispatches
+zone_pcp_update() to recalibrate the per-CPU pageset (PCP) batch
+allocation and replenishment limits across all physical memory zones
+[25.3]. Because the volume of fully managed physical page frames
+scales up significantly upon the conclusion of the deferred memory
+initialization pass, updating these PCP bounds is mandatory; omitting
+this calibration would cause the system's runtime memory allocation
+throughput to bottleneck under artificially small batch metrics.</p>
+</li>
+<li>
+<p>Hot-Patching High-Performance Code Paths: Leverages static jump label
+optimization technology to directly overwrite the processor's machine
+instructions in memory, removing the conditional check loops that
+audited whether a requested address space belonged to a deferred,
+uninitialized page frame [18.3, 19.6]. This action officially
+transitions the memory subsystem out of a restricted early boot state
+into a streamlined, high-performance runtime configuration.</p>
+</li>
+<li>
+<p>Dismantling the Early Boot Allocator: Dispatches memblock_discard() to
+tear down the temporary, low-level memblock allocator. The memblock
+engine serves merely as a primitive, flat memory allocation tool
+consumed while the kernel is blind to advanced structures. Upon
+reaching this boundary, the private memory tracking spaces previously
+held by memblock are released back into the central buddy system,
+transferring exclusive jurisdiction over all physical memory blocks
+over to the formalized buddy allocator [25.3].</p>
+</li>
+<li>
+<p>Scrambling Free Memory Page Arrays: Invokes shuffle_free_memory() to
+intentionally randomize the chronological order of free memory pages
+managed inside the buddy allocator's lookaside lists. This security
+mitigation shatters the chronological predictability of the memory
+allocation queues, neutralizing heap-grooming exploit vectors designed
+to target predictable memory layouts, while concurrently reducing
+cache line thrashing and bank conflict anomalies under specific
+massive parallel processing workloads [22.2].</p>
+</li>
+<li>
+<p>Flagging Zone Contiguity States: Fires the core helper
+set_zone_contiguous() to analyze and flag the physical contiguity
+profiles of the memory zones, enabling the buddy allocator to optimize
+lookups when compiling large-scale contiguous allocations (such as
+handling Huge Pages).</p>
+</li>
+</ul>
+<p>The function page_ext_init() is compiled into the kernel image via
+conditional preprocessor directives governed by the configuration switch
+CONFIG_SPARSEMEM, meaning its initialization logic is activated
+exclusively when the operating system tracks memory under a sparse
+memory model; under any alternate memory layout configuration, this
+interface resolves to a standard empty inline shell function. Its
+primary structural operations encompass:</p>
+<ul>
+<li>
+<p>Auditing Extension Demands via invoke_need_callbacks(): Systematically
+queries the global operations matrix page_ext_ops to determine
+precisely which independent kernel subsystems require appending a
+custom piece of private tracking metadata onto the primary physical
+memory page descriptors, and checks their respective allocation and
+initialization rules. If no runtime feature demanding page extensions
+is active in the configuration, the function exits immediately.</p>
+</li>
+<li>
+<p>Allocating Segmented Page Extension Matrices: Iterates through every
+memory-populated node across the system to parse its distinct memory
+segments (the kernel sections physical memory into isolated tracking
+blocks, traditionally sized at 128 MiB or less). It verifies the
+physical Page Frame Number (PFN) boundaries and node affinity
+legitimacy—a vital verification pass because on highly advanced
+enterprise architectures, physical memory address ranges do not always
+scale continuously within a single physical node—and dynamic
+allocates a dedicated tracking array to store the page extension
+descriptor matrices (struct page_ext) corresponding to each segment.</p>
+</li>
+<li>
+<p>Dynamic Callback Binding Hooking: Calls invoke_init_callbacks() to
+execute dynamic framework initialization, broadcasting an asynchronous
+signal to all registered functional sub-modules that their dedicated
+page extension storage arrays stand fully online and ready for
+consumption.</p>
+</li>
+</ul>
+<p>Because the programmatic initialization of these multi-terabyte scale
+page extension structures (spanning setups with massive TB-level
+physical RAM) can introduce processing overhead that locks the system
+for several seconds, the execution loop inserts a explicit call to
+cond_resched() while traversing each independent memory segment. This
+layout allows Process 1 to proactively yield the CPU core, granting
+transient processing windows to critical background kernel threads (such
+as high-priority systemic monitoring daemons) to prevent apparent system
+hang or "false-dead" anomalies.</p>
+<p>Upon the clean conclusion of the page_alloc_init_late() block, the
+kernel's core task scheduler, virtual memory management subsystem, and
+hardware interrupt handling infrastructures stand completely functional
+and ready [24.3, 30.1]. At this milestone, the initialization focus
+turns comprehensively to discovery, probing, and bootstrapping the
+massive network of peripheral hardware devices. The function
+do_basic_setup() serves as the definitive microarchitectural turning
+point where the kernel shifts out of core foundational subsystem
+initialization to formally engage peripheral device and hardware driver
+initialization passes.</p>
+<p>As established across preceding chapters, up to this explicit boundary
+along the system bootstrap pipeline, the kernel's execution tracks have
+been restricted strictly to tuning and priming core infrastructure
+elements—such as the memory node managers, local scheduling clocks,
+and interrupt controllers—without interfacing with standard external
+hardware peripherals or their standalone driver modules. Commencing from
+this boundary, kernel_init_freeable() dispatches do_basic_setup() to
+assemble the absolute global framework governing device models, map out
+the system's resource allocation boundaries, prepare the primary
+user-space interaction interfaces, and execute extensive driver loading
+passes [24.1, 27.6]. do_basic_setup() is hosted within the central
+kernel initialization tree file git/init/main.c, and its definition is
+implemented as follows:</p>
+<pre><code>static void __init do_basic_setup(void)
+{
+	cpuset_init_smp();
+	driver_init();
+	init_irq_proc();
+	do_ctors();
+	usermodehelper_enable();
+	do_initcalls();
+}
+</code></pre>
+<ul>
+<li>
+<p>The function cpuset_init_smp() initializes the core cpuset subsystem
+to operate under a symmetric multiprocessing (SMP) environment,
+mathematically proving that any subsequent task threads spawned across
+the system (including the upcoming user-space init daemon) can be
+programmatically fenced and constrained to execute exclusively on a
+designated subset of CPU cores or physical memory nodes [17.3,
+28.3]. Its central technical milestone is to define the definitive
+resource boundaries assigned to the root container (top_cpuset),
+executing the following tasks:</p>
+<ul>
+<li>
+<p>Affinity Mask Cloning via cpumask_copy(): Clones the contents of the
+system's active processor mask cpu_active_mask (the runtime bitmask
+registry tracking all online, functional cores) and writes those
+bits directly to populate the master allowed cores mask belonging to
+the root container (top_cpuset.cpus_allowed). This configuration
+pass ensures that during initial operations, all processes inherit
+unconstrained access to run across any active CPU core present on
+the machine [21.2, 28.3].</p>
+</li>
+<li>
+<p>NUMA Resource Allocation: Binds every single valid memory-populated
+physical node across the platform topology to settle under the
+administrative jurisdiction of the root cpuset
+(top_cpuset.mems_allowed) [25.4, 28.3].</p>
+</li>
+<li>
+<p>Synchronizing Effective Affinity Limits: Copies the computed allowed
+core bitmask straight to populate the root group's active runtime
+mask (top_cpuset.effective_cpus), mathematically guaranteeing that
+the microarchitectural limits physically enforced by the scheduler
+track in absolute harmony with the administrative target settings
+[28.3].</p>
+</li>
+<li>
+<p>Memory Hotplug Lifecycle Registration: Hooks the specialized memory
+hotplug notification block cpuset_track_online_nodes_nb() directly
+into the kernel's central hotplug core, ensuring that if an
+administrator dynamically inserts or extracts physical memory
+hardware modules at runtime, the cpuset engine instantly intercepts
+the event to update its active inventory of available memory nodes
+[21.2].</p>
+</li>
+<li>
+<p>Instantiating the Async Memory Migration Workqueue: Spawns a
+dedicated system workqueue tasked with executing asynchronous
+background page migrations. Consequently, whenever an operator
+manually mutates the localized memory node constraints bounding an
+active cpuset, the core engine leverages this workqueue to
+asynchronously lift and migrate the process's physical memory page
+frames away from legacy nodes to hot-swap them into the newly
+assigned destination blocks, entirely insulating the calling thread
+from blocking delays [17.2, 25.3].</p>
+</li>
+</ul>
+</li>
+<li>
+<p>The function driver_init() initializes the kernel's unified Device
+Model, constructing the baseline, standard skeletal directory trees
+exposed under the sysfs framework (such as pre-populating the anchor
+directory pathways /sys/devices, /sys/bus, and /sys/class) [27.6].
+Stripped of this foundational step, the expansive array of peripheral
+hardware drivers subsequently executed during the do_initcalls() block
+would inherit no operational hooks to export their localized device
+nodes, completely breaking the system's ability to handle dynamic
+Plug-and-Play (PnP) discovery. The structural design of the completed
+Linux device model maps natively to instantiate the following primary
+directory nodes within the virtual sysfs layout:</p>
+</li>
+</ul>
+<blockquote>
+<p><em>/sys/</em></p>
+<p><em>├── devices/ /* Organizes hardware devices according to
+physical/topological hierarchy */</em></p>
+<p><em>├── bus/ /* Segregates devices and drivers by explicit bus types
+(sub-divided into devices/</em></p>
+<p><em>and drivers/) */</em></p>
+<p><em>├── class/ /* Groups and clusters peripheral hardware devices based
+on functional type */</em></p>
+<p><em>├── firmware/ /* Interfaces mapping out system firmware and
+low-level subsystem interfaces */</em></p>
+<p><em>├── hypervisor/ /* Exposes data nodes tracking virtualization layers
+and guest hypervisors */</em></p>
+<p><em>└── dev/ /* Houses high-speed mapping tables bridging raw device
+numbers to device objects */</em></p>
+</blockquote>
+<p>The routine driver_init() abstains from registering concrete peripheral
+drivers directly; instead, its principal structural objective is to
+construct the master universal framework, bus definitions, and device
+classes that all subsequent hardware drivers require to hook into the
+system.</p>
+<p>This foundational Linux hardware tracking framework encompasses the
+comprehensive device model alongside its tightly integrated user-space
+interfaces and supporting subsystems. The core operational entities
+anchoring the device model encompass:</p>
+<ul>
+<li>
+<p>Device (struct device): Models a discrete, standalone physical or
+virtual hardware component.</p>
+</li>
+<li>
+<p>Driver (struct device_driver): The execution software code block
+responsible for communicating with and driving a specific category of
+hardware.</p>
+</li>
+<li>
+<p>Bus (struct bus_type): The physical or logical communication channel
+interconnecting devices to their drivers (such as PCI, USB, or I2C
+channels).</p>
+</li>
+<li>
+<p>Class (struct class): An abstraction tier grouping devices by
+functional capabilities (such as grouping distinct display outputs
+under the graphics class or block devices under the block class)
+regardless of their underlying bus connectivity.</p>
+</li>
+</ul>
+<p>Concurrently, sub-modules including the firmware core, the sysfs virtual
+hierarchy arrays, and the high-speed devtmpfs device nodes manager
+operate as the vital auxiliary infrastructure and user-space API
+interfaces designed to support this device model.</p>
+<p>The internal workflow of driver_init() is partitioned into two distinct
+sequential blocks: initializing the core skeletal framework (Core
+Pieces), followed by processing the hardware types and platform-specific
+sub-module extensions. The first block initializing the core
+architecture skeleton dispatches the following functions:</p>
+<ul>
+<li>
+<p>devtmpfs_init(): Bootstraps the automated device nodes filesystem,
+creating the in-memory repository that automatically populates raw
+device nodes under the /dev path the moment a driver initializes.</p>
+</li>
+<li>
+<p>devices_init(): Instantiates the foundational structures tracking the
+physical system device topologies.</p>
+</li>
+<li>
+<p>buses_init(): Sets up the structural tracking lists assigned to manage
+communication buses.</p>
+</li>
+<li>
+<p>classes_init(): Initializes the core functional capability class
+registries.</p>
+</li>
+<li>
+<p>firmware_init(): Boots the tracking layers that coordinate kernel
+interactions with subsystem firmware blocks.</p>
+</li>
+<li>
+<p>hypervisor_init(): Synthesizes the tracking structures that export
+hypervisor metrics.</p>
+</li>
+</ul>
+<p>This core functional group works in tight synchronization to lock down
+the lowest-level, generalized cross-architecture device model framework.</p>
+<p>The secondary execution block processes the device types and
+platform-level structural enhancements, which depend heavily on the
+baseline interfaces established across the first phase. This extension
+group evaluates the following routines:</p>
+<ul>
+<li>
+<p>of_core_init(): Bootstraps the core Open Firmware (OF) and Device Tree
+parsing components consumed to track hardware layouts from compiled
+firmware blobs.</p>
+</li>
+<li>
+<p>platform_bus_init(): Initializes the virtual pseudo-bus (Platform Bus)
+utilized by the kernel to anchor memory-mapped SoC integrated
+peripherals that lack a physical discoverable bus interface.</p>
+</li>
+<li>
+<p>cpu_dev_init(): Instantiates the device model nodes dedicated to
+tracking the hardware properties of the system's active CPU cores.</p>
+</li>
+<li>
+<p>memory_dev_init(): Establishes the device model representations
+consumed to monitor and govern the physical memory hardware blocks.</p>
+</li>
+<li>
+<p>container_dev_init(): Initializes the device model descriptors
+tracking abstract hardware containers or localized peripheral
+aggregation structures.</p>
+</li>
+</ul>
+<p>The secondary execution block within driver_init() processes the device
+types and platform-level structural enhancements, which depend heavily
+on the baseline interfaces established across the first phase. This
+extension group evaluates the following routines:</p>
+<ul>
+<li>
+<p>of_core_init() (Device Tree Core Infrastructure): Initializes the core
+Open Firmware parsing and abstraction frameworks, building the
+memory-resident tracking records required to bridge hardware
+components described within compiled Device Tree blobs (DTBs) over to
+the kernel's execution context [20.3, 23.1]. Its programmatic
+responsibility is to prepare the parsing parameters that enable static
+firmware-defined hardware blocks to successfully hook into the Linux
+device model, ensuring that subsequent automated platform device
+registrations and driver-matching loops can be processed smoothly
+[20.3].</p>
+</li>
+<li>
+<p>platform_bus_init() (The Platform Pseudo-Bus Architecture): Bootstraps
+and registers the central system platform bus (platform_bus),
+providing a unified matching and orchestration framework to coordinate
+interactions between platform_device structures and platform_driver
+descriptors. It effectively establishes the master virtual
+communication channel used to anchor non-enumerable, memory-mapped
+on-board hardware components. The platform bus represents one of the
+most vital architectural subsystems within embedded computing and
+System-on-Chip (SoC) engineering, manifesting inside the sysfs tree at
+the paths /sys/bus/platform/ and /sys/devices/platform/. Platform
+devices encompass silicon modules integrated directly into the SoC's
+physical address space, including internal UART serial macros, GPIO
+pin controllers, hardware RTC clocks, alongside SPI and I2C master
+controller blocks.</p>
+</li>
+<li>
+<p>cpu_dev_init() (Integrating CPUs as Device Objects): Initializes the
+device model definitions tracking the system's physical CPU cores,
+constructing a nested sub-directory hierarchy at
+/sys/devices/system/cpu/. By encapsulating raw CPU cores to behave as
+formal device objects within the core framework, the kernel can
+seamlessly leverage its standardized device model workflows to manage
+advanced multi-processor tasks, including hotplug core scheduling,
+symmetric topology tracking, and dynamic voltage/frequency scaling
+(DVFS) loops [17.3, 21.2].</p>
+</li>
+<li>
+<p>memory_dev_init() (Integrating Physical Memory as Device Objects):
+Initializes the memory device descriptors and builds the
+administrative directory tree path /sys/devices/system/memory/. This
+module hooks raw physical memory segments and page frame blocks
+straight into the global device model, providing the architectural
+foundation required to support dynamic memory hotplug transitions,
+monitor lookaside memory block allocation states, and allow user-space
+administrative tools to inspect the live physical layout of the
+platform's RAM banks [24.3, 25.3].</p>
+</li>
+<li>
+<p>container_dev_init() (Hierarchical Device Containers): Bootstraps
+logical container device abstractions within the device model. A
+container object acts as a high-level parent node utilized to cluster,
+aggregate, and organize related hardware modules under a single
+structural supervisor, optimizing the hierarchical organization of
+advanced system topologies.</p>
+</li>
+</ul>
+<p>In summary, the execution of driver_init() refrains from loading an
+individual peripheral device driver; instead, it establishes the
+complete, unified architectural blueprint of the Linux Device Model
+during early boot. It constructs the strict rulesets, boundary paths,
+and matching loops that dictate precisely how every downstream hardware
+device across the machine will be attached, grouped, validated against
+drivers, exposed via sysfs, and translated into clean device nodes
+inside the filesystem.</p>
+<p>Following this device framework configuration, the routine
+init_irq_proc() initializes the core interrupt procfs interface,
+assembling the specialized irq subdirectory tree inside the virtual
+/proc repository [28.1]. This routine is defined within the generic
+interrupt procfs tracking file git/kernel/irq/proc.c, and the technical
+operations it fulfills include:</p>
+<ul>
+<li>
+<p>Invoking proc_mkdir() to Create the irq Directory Structure Under
+/proc:<br>Establishes the centralized administrative base path for real-time
+interrupt telemetry tracking [28.1].</p>
+</li>
+<li>
+<p>Executing register_default_affinity_proc():<br>Instantiates a dedicated tracking file named default_smp_affinity
+directly within the /proc/irq/ directory subtree, mapping out its
+functional operational callbacks. This interface empowers
+administrators to audit or mutate the default system-wide multi-core
+processor routing constraint mask assigned to newly registered
+hardware interrupts [21.2, 28.1].</p>
+</li>
+<li>
+<p>Traversing Existing Interrupt Vectors to Invoke register_irq_proc(irq,
+desc):<br>Iterates through the registered interrupt database to generate a
+discrete, dedicated subdirectory corresponding to each logical
+interrupt identifier (such as /proc/irq/44/) under the /proc/irq/
+canvas. It alternative spawns the critical runtime management
+interface files inside those nodes—including smp_affinity and node
+files—to expose hardware routing and affinity tuning knobs directly
+to user space [20.3, 28.1].</p>
+</li>
+</ul>
+<p>The routine do_ctors() loops through and fires the C++ style static
+constructor functions whose entry pointers are bounded between the
+linker symbols __ctors_start and __ctors_end. Although the core
+Linux kernel binary text is engineered using the standard C language,
+the GCC compiler toolchain provides full microarchitectural support to
+evaluate functions decorated with the code attribute
+__attribute__((constructor)) within C source tracks. During the
+master link phase, the linker automatically intercepts these entry
+points and aggregates their absolute destination memory addresses
+straight into the specialized constructor tracking segments. do_ctors()
+executes a sequential traversal to run each of these marked setup
+routines, initializing static structural tracking variables across the
+image. This operational sequence triggers exclusively when the build
+configuration flag CONFIG_CONSTRUCTORS is enabled; otherwise, the
+interface resolves to a standard empty inline function stub.</p>
+<p>The function usermodehelper_enable() opens the outbound execution
+routing channels connecting the kernel space over to the user-space
+environment, formally activating the User-Mode Helper (UMH) up-call
+mechanism. The UMH framework is a standardized microarchitectural
+infrastructure within the Linux kernel designed to empower core kernel
+code blocks to directly spawn, configure, and execute standalone
+user-space binary applications. It implements a clean inverse execution
+vector routing control from privileged kernel paths down to unprivileged
+tasks, functioning as a critical hand-shaking gateway during system
+runtime. Whenever an internal driver stack or core subsystem requires an
+external user-space binary to fulfill a deferred operational task—such
+as driving automated driver module insertion loops, parsing asynchronous
+hardware hotplug notifications, or sourcing missing firmware blocks from
+disk—this communication framework must be open and active [21.2].</p>
+<p>To clarify its precise systemic role: this specific function merely
+switches an internal global coordinator variable usermodehelper_disabled
+to evaluate as UMH_ENABLED. The actual generation and launching of a
+user-space task from within kernel paths is dispatched subsequent by
+utilizing the core up-call wrapper interface call_usermodehelper().</p>
+<p>Subsequent sections detail the final and most systemically expansive
+technical milestone orchestrated by the do_basic_setup() block: the
+execution of do_initcalls(). Leveraging the kernel's unified Initcall
+priority sequencing framework, this routine loops through and fires
+every single built-in peripheral hardware driver, module, and subsystem
+(including the core initialization of the primary root filesystem) in a
+strict, multi-tiered hierarchy scaling sequentially from priority Level
+0 up to Level 7. To provide an optimal structural understanding of this
+massive parallel execution grid, the subsequent section breaks down the
+underlying operational mechanics of the initcall pipeline.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="30.2 Transitioning to User Space.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="30.4 Introduction to the initcall Mechanism.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="30.2 Transitioning to User Space.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="30.4 Introduction to the initcall Mechanism.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

@@ -1,0 +1,839 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Log Buffer Configuration - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/14.1 Log Buffer Configuration.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="141-log-buffer-configuration"><a class="header" href="#141-log-buffer-configuration">14.1 Log Buffer Configuration</a></h2>
+<p>During the boot phase, the system has not yet completed its core
+initialization routines, nor has it loaded device drivers. Consequently,
+messages cannot be exported via standard subsystem drivers. To track the
+boot sequence, print fault diagnostics, and output debugging traces, the
+Linux kernel provides the printk() function to facilitate fundamental
+message logging capabilities during the system bootstrap phase.</p>
+<p>Linux utilizes a circular queue topology to store tracking messages
+targeted for display during the boot sequence. The kernel implements
+diverse functions to orchestrate queue movement, read operations, write
+operations, and storage space allocation, all of which are leveraged by
+the printk() engine. The following sections outline the architecture and
+operations of this circular queue framework to clarify the log buffer
+initialization process.</p>
+<h3 id="1411-ring-buffer"><a class="header" href="#1411-ring-buffer">14.1.1 Ring Buffer</a></h3>
+<p>The Linux kernel describes the ring structure utilized by the printk
+engine via the following structural abstraction:</p>
+<pre><code>struct printk_ringbuffer {
+	struct prb_desc_ring	desc_ring;
+	struct prb_data_ring	text_data_ring;
+	atomic_long_t		fail;
+};
+</code></pre>
+<p>This structure defines the primary header control block of the ring
+buffer queue. The desc_ring field describes the descriptor ring tracking
+metadata records, while the text_data_ring field represents the primary
+data ring buffer used to preserve the literal string text targeted for
+printing. The fail variable tracks the cumulative count of read or write
+anomalies encountered.</p>
+<p>The layout of the ring buffer header control block is illustrated in
+Figure 14-1.</p>
+<center>
+<figure>
+<img src="./media/image109.png" style="width:70%;height:auto" />
+<figcaption>
+<p>Figure 14-1 Structural Layout of the Ring Buffer Header</p>
+</figcaption>
+</figure>
+</center>
+<p>The collective blueprint of the entire ring buffer architecture is
+illustrated in Figure 14-2.</p>
+<center>
+<figure>
+<img src="./media/image110.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 14-2 Monolithic Topology of the Ring Buffer</p>
+</figcaption>
+</figure>
+</center>
+<h4 id="14111-the-descriptor-ring-buffer"><a class="header" href="#14111-the-descriptor-ring-buffer">14.1.1.1 The Descriptor Ring Buffer</a></h4>
+<p>The concrete array elements composing the metadata descriptor ring are
+specified by the following data type:</p>
+<pre><code>struct prb_desc_ring {
+	unsigned int			count_bits;
+	struct prb_desc		*descs;
+	struct printk_info		*infos;
+	atomic_long_t		head_id;
+	atomic_long_t		tail_id; 
+};
+</code></pre>
+<p>Within this tracking control block, count_bits establishes the exact
+magnitude of the descs array—defining the bit width utilized to index
+elements inside the descs repository. The literal size of the descs
+array evaluates to DESC_COUNT = 2^count_bits^. The descs member points
+to an array of type struct prb_desc, which Linux accesses via a
+modulo-based circular methodology. Each standalone entry in this array
+corresponds to a discrete tracking payload, mapping out the base
+boundary, tail boundary, and active state of the associated record. The
+infos array stores supplemental metadata descriptors associated with the
+log entries. Its indices correspond one-to-one with the elements of the
+descs array, meaning records sharing an identical index value track the
+exact same message payload. head_id represents the logical sequence
+index of the most recent descriptor record committed into the descs
+array, while tail_id tracks the logical index of the oldest valid record
+retained within the matrix.</p>
+<p>The individual elements inside the descs array are formatted as:</p>
+<pre><code>struct prb_desc {
+	atomic_long_t			state_var;
+	struct prb_data_blk_lpos		text_blk_lpos;
+};
+</code></pre>
+<p>The upper two bits of the state_var variable serve as explicit state
+bitmasks used to track the operational phase of the matching descriptor
+entry. This metadata state field accepts the discrete evaluation
+properties desc_reusable, desc_reserved, desc_committed, and
+desc_finalized. These represent free space available for reuse, storage
+space actively held by a writer context, data committed by a writer
+context but not yet fully visible, and data finalized and available for
+read consumption, respectively.</p>
+<p>The programmatic definitions for these entry state parameters are
+structured as follows:</p>
+<pre><code>enum desc_state {
+	desc_miss		=  -1,		/* ID mismatch (pseudo state) */
+	desc_reserved	= 0x0,		/* reserved, in use by writer */
+	desc_committed	= 0x1,		/* committed by writer, could get reopened */
+	desc_finalized	= 0x2,		/* committed, no further modification allowed */
+	desc_reusable	= 0x3,		/* free, not yet used by any writer */
+};
+</code></pre>
+<p>The tracking symbol desc_miss is never preserved inside the literal
+state_var flag; it merely acts as a programmatic pseudo-state denoting
+that a matching descriptor entry cannot be located within the ring
+metadata table.</p>
+<p>The remaining bits of state_var specify the logical identification
+sequence number of the descriptor, whose scale extends far beyond the
+physical array limits of the ring list. Computing the logical identifier
+modulo the total array dimension yields the physical array slot
+location: index = ((state_var &lt;&lt; 2) &gt;&gt; 2) % DESC_COUNT. This logical
+sequence token is concurrently stored at the leading boundary of the
+corresponding text data block payload.</p>
+<p>The structure type for text_blk_lpos is implemented as:</p>
+<pre><code>struct prb_data_blk_lpos {
+	unsigned long	begin;	
+	unsigned long	next;
+};
+</code></pre>
+<p>begin represents the absolute starting memory tracking position of the
+text payload corresponding to this descriptor block. next indicates the
+starting position of the subsequent data payload block. By analyzing the
+values of begin and next, the core subsystem can determine the location
+and size of the text data described by this entry.</p>
+<p>The infos array tracks supplemental metadata records belonging to the
+matching entry data payload, and its structure is defined as follows:</p>
+<pre><code>struct printk_info {
+	u64	seq;				/* sequence number */
+	u64	ts_nsec;			/* timestamp in nanoseconds */
+	u16	text_len;			/* length of text message */
+	u8	facility;			/* syslog facility */
+	u8	flags:5;			/* internal record flags */
+	u8	level:3;			/* syslog level */
+	u32	caller_id;			/* thread id or processor id */
+	struct dev_printk_info	dev_info;
+};
+</code></pre>
+<p>The most critical parameters inside this layout are the chronological
+sequence token seq and the message priority property level. The sequence
+number is utilized to index and interface with this ring list
+infrastructure, while users can leverage the log level to filter the
+specific content targeted for output display.</p>
+<p>During initial execution, the element situated at index 0 of the infos
+repository initializes with a sequence value of 0, whereas all
+subsequent items possess sequence tokens that match their literal array
+index slots. Because this framework wraps as a circular loop sequence,
+each tracking slot is recycled and rewritten multiple times. When an
+individual slot is reallocated for a new log entry, its sequence number
+increments by adding DESC_COUNT onto the baseline sequence metric.</p>
+<p>The structural arrangement of the descriptor ring queue is illustrated
+in the diagram below.</p>
+<center>
+<figure>
+<img src="./media/image111.png" style="width:50%;height:auto" />
+<figcaption>
+<p>Figure 14-3 Structural Layout of the Descriptor Ring</p>
+</figcaption>
+</figure>
+</center>
+<h4 id="4112-the-data-ring-buffer"><a class="header" href="#4112-the-data-ring-buffer">4.1.1.2 The Data Ring Buffer</a></h4>
+<p>The data ring buffer is utilized to preserve the literal tracking text
+targeted for output display. The underlying elements composing this ring
+queue are described by the following structure:</p>
+<pre><code>struct prb_data_ring {
+	unsigned int			size_bits;
+	char				*data;
+	atomic_long_t			head_lpos;
+	atomic_long_t			tail_lpos;
+};
+</code></pre>
+<p>Within this tracking structure, size_bits defines the total bit width
+required to represent the index values used to access elements within
+the data queue. The queue data container data is implemented as a
+character array whose absolute capacity evaluates to DATA_SIZE =
+2^size_bits^, inside of which the actual string payload is saved. This
+tracking container is likewise processed using modulo-based circular
+access logic, where the physical array index is calculated as:</p>
+<pre><code>data_index = lpos%DATA_SIZE
+</code></pre>
+<p>Here, lpos represents the logical tracking address of the raw data
+block, and its boundary scale extends far beyond the physical
+constraints of DATA_SIZE.</p>
+<h3 id="1412-ring-buffer-operations"><a class="header" href="#1412-ring-buffer-operations">14.1.2 Ring Buffer Operations</a></h3>
+<p>The Linux kernel implements a robust suite of functions dedicated to
+manipulating the core components of the printk ring buffer
+infrastructure. The function prb_init(struct printk_ringbuffer *rb,
+char *text_buf, unsigned int textbits, struct prb_desc *descs,
+unsigned int descbits, struct printk_info *infos) is responsible for
+initializing a target ring buffer instance rb. Within this interface,
+text_buf, descs, and infos represent externally allocated backing
+storage structures supplied to the ring subsystem, which act
+respectively as the raw text data ring buffer, the descriptor array, and
+the metadata info array. The parameter descbits configures the bit width
+utilized to index elements inside the descs tracking structure, while
+textbits defines the bit width utilized to index elements inside the
+data array within the data ring structure. This initialization routine
+hooks the pointers text_buf, descs, and infos onto the corresponding
+tracking fields of rb, establishes the initial operational bounds of the
+descriptor and info queues via descbits, and configures the initial
+limits of the text data ring via textbits.</p>
+<p>Once the structural scaffolding of the ring buffer has been established,
+the subsystem can execute concurrent read and write operations against
+it. Prior to executing a write operation against an existing ring buffer
+instance rb, a tracking variable r of the following type must be
+declared:</p>
+<pre><code>struct printk_record {
+	struct printk_info	*info;
+	char			*text_buf;
+	unsigned int		text_buf_size;
+};
+</code></pre>
+<p>Following the declaration of r, the function prb_rec_init_wr(&amp;r, len) is
+invoked to configure the text_buf_size field to match the explicit
+buffer size allocation requirements specified by len. The function
+prb_rec_init_wr() is implemented as follows:</p>
+<pre><code>void prb_rec_init_wr(struct printk_record *r, unsigned int text_buf_size)
+{
+	r-&gt;info = NULL;
+	r-&gt;text_buf = NULL;
+	r-&gt;text_buf_size = text_buf_size;
+}
+</code></pre>
+<p>As demonstrated by the implementation snippet, the role of this routine
+is to establish the dimensions of the write staging buffer by
+initializing the text_buf_size field of the printk_record structure
+tracking variable r.</p>
+<p>After initializing the tracking variable r, the system invokes the
+function prb_reserve(struct prb_reserved_entry *e, struct
+printk_ringbuffer *rb, struct printk_record *r) to reserve the
+necessary structural storage space for both the metadata descriptor and
+raw text data entries inside the ring buffer rb for the calling thread
+context. It subsequently assigns the internal infos pointer of the newly
+carved descriptor element and the internal data pointer of the allocated
+text payload element directly onto the info and text_buf fields of the
+tracking variable r, respectively. The function prb_reserve() records
+the remaining operational metadata belonging to this reserved block
+within a separate context variable e of type struct prb_reserved_entry.
+This metadata tracking structure captures a pointer rb mapping back to
+the parent ring buffer, the logical tracking identification token id of
+the newly reserved descriptor, and the absolute size metrics of the
+memory space consumed by the data block. Upon completing these alignment
+and registration tasks, the calling context can execute its concrete
+write transaction against the ring buffer by streaming data directly
+into the memory buffer referenced by the text_buf field of variable r.</p>
+<p>The kernel further exports a higher-level abstract write interface
+designated as add_to_rb(struct printk_ringbuffer *rb, struct
+printk_record *r). This utility automatically orchestrates the
+underlying calls to prb_rec_init_wr() and prb_reserve() to allocate
+descriptor and text data blocks, copies the diverse data streams
+referenced by r.info and r.text_buf directly into the corresponding
+storage blocks reserved inside the ring buffer infrastructure, and
+subsequently invokes the routine prb_final_commit() to transition the
+state bitmask of the data block to a readable phase. Finally, it returns
+the total memory footprint consumed by the archived record payload.</p>
+<p>When executing a read transaction against a target ring buffer, a
+tracking variable of type struct printk_record must similarly be
+declared. In contrast to the write sequence, the subsystem must
+explicitly allocate two standalone staging memory zones prior to
+reading, which are leveraged to preserve the data payload streams
+retrieved from the text data queue and the metadata descriptor queue
+respectively. Before reading from the ring list, the printk_record
+tracking variable r must be initialized with the physical base memory
+addresses and size limits of these two independent staging zones. The
+function responsible for initializing this tracking context is
+implemented as follows:</p>
+<pre><code>void prb_rec_init_rd(struct printk_record *r, struct printk_info *info, char *text_buf, unsigned int text_buf_size)
+{
+	r-&gt;info = info;
+	r-&gt;text_buf = text_buf;
+	r-&gt;text_buf_size = text_buf_size;
+}
+</code></pre>
+<p>Within this initialization wrapper, the pointer info tracks the base
+address of the staging zone allocated to hold descriptor metadata
+records, text_buf points to the base address of the staging zone
+allocated to hold text data payloads, and text_buf_size specifies the
+absolute memory limit of the text data staging allocation.</p>
+<p>Following the configuration of the tracking variable r, the core
+subsystem can read back the ring buffer data payloads and associated
+info records by evaluating the contents hosted at the target memory
+locations referenced by the distinct pointers inside r.</p>
+<p>The Linux kernel additionally implements a variety of supplemental
+helper functions to handle display updates, scale the log buffer
+capacity dynamically for auxiliary secondary CPU cores, validate the
+structural integrity of the ring lists, read out record states, and
+execute mathematical transformations to map logical identifiers and
+locations (id and lpos tokens) into literal array indices. These
+specialized routines are defined across the source code trees located
+within the files git/kernel/printk/printk_ringbuffer.h and
+git/kernel/printk/printk_ringbuffer.c.</p>
+<h3 id="1413-data-state-transition"><a class="header" href="#1413-data-state-transition">14.1.3 Data State Transition</a></h3>
+<p>As established in the preceding sections, the upper two bits of the
+state_var field within the descriptor ring describe the operational
+phase of its corresponding entry. The state can be read via the function
+desc_read() by providing a specific logical index. If the descriptor
+ring cannot locate an entry that matches the specified logical index,
+the function returns the desc_miss pseudo-state.</p>
+<p>The active lifecycle of an entry comprises four core states:
+desc_reusable, desc_reserved, desc_committed, and desc_finalized. Upon
+system initialization, all entries default to the desc_reusable state.
+When a writer context triggers a log allocation, it invokes the function
+prb_reserve() to lock down the necessary storage space inside the ring
+buffer. The descriptor subsystem scans for available slots starting from
+head_id + 1. If the structural distance between head_id and tail_id
+reaches the maximum physical dimension of the descriptor array,
+prb_reserve() advances the tail position of the circular list, thereby
+evicting the stale record occupied at the old tail boundary. Once the
+writer context successfully claims a descriptor slot, it invalidates and
+frees up the physical space consumed by the oldest records inside the
+data ring. This data space allocation is executed by the internal
+routine data_alloc(). This routine scans for unallocated space starting
+from the begin_lpos boundary of the data ring. Upon claiming the
+necessary data blocks, data_alloc() marks the old associated descriptor
+entries as invalid and updates tail_lpos to guarantee that the active
+data bounds within the text array remain valid. After successfully
+reserving the memory blocks, the state bitmask of the matching entry
+transitions from desc_reusable to desc_reserved. The prb_reserve()
+routine can only claim memory from entries that reside in the
+desc_reusable state. Once the memory block is reserved, the writer
+context can stream data into the ring buffer. Upon completing the write
+transaction, calling the function prb_commit() transitions the entry
+status to desc_committed. Alternatively, if the write operation is
+concluded and no further modifications are required, calling the
+function prb_final_commit() transforms the state directly from
+desc_reserved to desc_finalized.</p>
+<p>The structural state transition rules are governed by a strict
+unidirectional lifecycle: desc_reusable can only transition to
+desc_reserved; desc_reserved can transition to either desc_committed or
+desc_finalized; desc_committed can only transition to desc_finalized;
+and desc_finalized can only revert to desc_reusable. This means that
+storage allocation can only be carved out from elements residing in the
+desc_reusable pool. Before any data can be committed to the ring buffer,
+the memory must be explicitly reserved. Furthermore, only elements that
+have reached the desc_finalized state are eligible to be invalidated and
+recycled by the system.</p>
+<h3 id="1414-initialization-of-the-log-buffer"><a class="header" href="#1414-initialization-of-the-log-buffer">14.1.4 Initialization of the Log Buffer</a></h3>
+<p>The printk subsystem utilizes two categories of ring buffers: a
+temporary early buffer and a standard dynamic ring buffer. During the
+initial booting phase, printk leverages a temporary staging queue that
+is programmatically set up at runtime. The standard persistent ring
+buffer is activated during later boot stages and post-boot execution,
+declared and instantiated via the macro definition
+_DEFINE_PRINTKRB(name, descbits, avgtextbits, text_buf). Within this
+macro blueprint, name specifies the identifier of the ring buffer
+instance, descbits configures the bit width utilized to index the
+elements of the descriptor array, avgtextbits dictates the bit width for
+the text data block sizing metrics, and text_buf points to the
+externally allocated static backing buffer designated to store the raw
+text data strings.</p>
+<p>The macro responsible for instantiating this ring buffer architecture is
+defined as follows:</p>
+<pre><code>#define _DEFINE_PRINTKRB(name, descbits, avgtextbits, text_buf)			\
+static struct prb_desc _##name##_descs[_DESCS_COUNT(descbits)] = {		\
+	[_DESCS_COUNT(descbits) - 1] = {					\
+		.state_var		= ATOMIC_INIT(DESC0_SV(descbits)),		\
+		.text_blk_lpos	= FAILED_BLK_LPOS,			\
+	},									\
+};										\
+static struct printk_info _##name##_infos[_DESCS_COUNT(descbits)] = {		\
+	[0] = {									\
+		.seq = -(u64)_DESCS_COUNT(descbits),				\
+	},									\
+	[_DESCS_COUNT(descbits) - 1] = {					\
+		.seq = 0,								\
+	},									\
+};										\
+static struct printk_ringbuffer name = {						\
+	.desc_ring = {								\
+		.count_bits	= descbits,					\
+		.descs		= &amp;_##name##_descs[0],			\
+		.infos		= &amp;_##name##_infos[0],			\
+		.head_id		= ATOMIC_INIT(DESC0_ID(descbits)),		\
+		.tail_id		= ATOMIC_INIT(DESC0_ID(descbits)),		\
+	},									\
+	.text_data_ring = {							\
+		.size_bits	= (avgtextbits) + (descbits),					\
+		.data		= text_buf,					\
+		.head_lpos	= ATOMIC_LONG_INIT(BLK0_LPOS((avgtextbits) + (descbits))),\
+		.tail_lpos	= ATOMIC_LONG_INIT(BLK0_LPOS((avgtextbits) + (descbits))),	\
+	},									\
+	.fail			= ATOMIC_LONG_INIT(0),			\
+}
+</code></pre>
+<p>This macro instantiates a monolithic ring buffer structural instance
+under the designated name name (where name represents the literal string
+sequence supplied by the caller). Concurrently, it allocates static
+tracking matrices name_descs and name_infos with a capacity scaling to
+2^descbit^ to serve respectively as the backing descs descriptor array
+and the infos metadata array. The text storage component of the data
+ring utilizes the externally supplied text_buf memory container. The
+internal trackers head_id, tail_id, and seq belonging to the descriptor
+infrastructure are initialized to predefined architectural defaults,
+while the tracking fields head_lpos and tail_lpos within the text data
+ring are similarly anchored to default base indices (typically resolving
+to 0 or -1).</p>
+<p>The specific ring buffer instance leveraged by the printk engine is
+designated as printk_rb_static, which is instantiated via the statement
+_DEFINE_PRINTKRB(printk_rb_static, CONFIG_LOG_BUF_SHIFT - PRB_AVGBITS,
+PRB_AVGBITS, &amp;__log_buf[0]). The data ring container specified in
+this declaration utilizes the core log buffer memory asset __log_buf,
+which is implemented as a global character array.</p>
+<p>The _DEFINE_PRINTKRB() macro merely executes the initial compile-time
+structural initialization for the printk_rb_static ring buffer topology.
+Before the printk() function can reliably stream logs into this queue,
+supplemental initialization settings must be orchestrated at runtime.
+The start_kernel() process handles this requirement by invoking the
+function setup_log_buf(0) to finalize the log buffer configuration. The
+function setup_log_buf(int early) is defined across the source files
+git/include/linux/printk.h and git/kernel/printk/printk.c, and its
+definition is implemented as:</p>
+<pre><code>void __init setup_log_buf(int early)
+{
+	struct printk_info *new_infos;
+	unsigned int new_descs_count;
+	struct prb_desc *new_descs;
+	struct printk_info info;
+	struct printk_record r;
+	size_t new_descs_size;
+	size_t new_infos_size;
+	unsigned long flags;
+	char *new_log_buf;
+	unsigned int free;
+	u64 seq;
+	if (!early)
+		set_percpu_data_ready();
+	if (log_buf != __log_buf)
+		return;
+	if (!early &amp;&amp; !new_log_buf_len)
+		log_buf_add_cpu();
+	if (!new_log_buf_len)
+		return;
+	new_descs_count = new_log_buf_len &gt;&gt; PRB_AVGBITS;
+	if (new_descs_count == 0) {
+		pr_err("new_log_buf_len: %lu too small\n", new_log_buf_len);
+		return;
+	}
+	new_log_buf = memblock_alloc(new_log_buf_len, LOG_ALIGN);
+	if (unlikely(!new_log_buf)) {
+		pr_err("log_buf_len: %lu text bytes not available\n", new_log_buf_len);
+		return;
+	}
+	new_descs_size = new_descs_count * sizeof(struct prb_desc);
+	new_descs = memblock_alloc(new_descs_size, LOG_ALIGN);
+	if (unlikely(!new_descs)) {
+		pr_err("log_buf_len: %zu desc bytes not available\n", new_descs_size);
+		goto err_free_log_buf;
+	}
+	new_infos_size = new_descs_count * sizeof(struct printk_info);
+	new_infos = memblock_alloc(new_infos_size, LOG_ALIGN);
+	if (unlikely(!new_infos)) {
+		pr_err("log_buf_len: %zu info bytes not available\n", new_infos_size);
+		goto err_free_descs;
+	}
+	prb_rec_init_rd(&amp;r, &amp;info, &amp;setup_text_buf[0], sizeof(setup_text_buf));
+	prb_init(&amp;printk_rb_dynamic, new_log_buf, ilog2(new_log_buf_len), new_descs, 
+ilog2(new_descs_count), new_infos);
+	logbuf_lock_irqsave(flags);
+	log_buf_len = new_log_buf_len;
+	log_buf = new_log_buf;
+	new_log_buf_len = 0;
+	free = __LOG_BUF_LEN;
+	prb_for_each_record(0, &amp;printk_rb_static, seq, &amp;r)
+		free -= add_to_rb(&amp;printk_rb_dynamic, &amp;r);
+	prb = &amp;printk_rb_dynamic;
+	logbuf_unlock_irqrestore(flags);
+	if (seq != prb_next_seq(&amp;printk_rb_static)) {
+		pr_err("dropped %llu messages\n", prb_next_seq(&amp;printk_rb_static) - seq);
+	}
+	pr_info("log_buf_len: %u bytes\n", log_buf_len);
+	pr_info("early log buf free: %u(%u%%)\n", free, (free * 100) / __LOG_BUF_LEN);
+	return;
+err_free_descs:
+	memblock_free(__pa(new_descs), new_descs_size);
+err_free_log_buf:
+	memblock_free(__pa(new_log_buf), new_log_buf_len);
+}
+</code></pre>
+<p>During execution, the printk() function needs to acquire the
+console_lock. If this lock is successfully acquired, printk() invokes
+the console drivers to output messages to the console hardware. If the
+console_lock cannot be obtained, printk() preserves the messages inside
+the __log_buf staging area. Prior to writing into the __log_buf
+area, printk() must acquire the logbuf_lock.</p>
+<p>Under Non-Maskable Interrupt (NMI) conditions, it is impossible for
+printk() to safely acquire the logbuf_lock. To prevent message loss in
+multi-CPU hardware architectures, the Linux kernel allocates a dedicated
+private buffer for each individual CPU core. When a CPU fails to acquire
+the logbuf_lock, it streams the data into its own private staging
+buffer. Subsequently, an interrupt service routine drains the data from
+these per-CPU private staging buffers back into the main ring buffer
+used by printk() at an appropriate time. The function
+set_percpu_data_ready() calls printk_safe_init() to establish these
+private buffers for each CPU. It registers the function
+__printk_safe_flush() as the deferred interrupt handling task
+responsible for flushing data from the private buffers into the main
+ring buffer, and sets the per-CPU flag __printk_percpu_data_ready to
+indicate that this mechanism is fully operational.
+__printk_safe_flush() is defined in the source file
+git/kernel/printk/printk_safe.c.</p>
+<p>The ring buffer instantiated via the macro definition
+_DEFINE_PRINTKRB() can initially only be utilized by a single CPU. When
+the system incorporates multiple CPU cores, an equivalent volume of
+storage space must be allocated for the other CPUs to handle log
+messages. The function setup_log_buf() first evaluates the aggregate log
+buffer capacity demanded across all active CPUs via new_log_buf_len().
+Following this evaluation, it leverages the memblock_alloc() memory
+allocation function to independently carve out chunks of memory for the
+text data area, the descs descriptor array, and the infos metadata
+array.</p>
+<p>As established previously, performing a read operation against the ring
+buffer requires an external staging area. The Linux kernel declares a
+global character array designated as setup_text_buf[LOG_LINE_MAX]. The
+setup_log_buf() function utilizes the address and size of this array to
+initialize the read staging record r via prb_rec_init_rd(). Upon
+completing these preparatory tasks, setup_log_buf() creates a new ring
+buffer instance named printk_rb_dynamic by binding the newly allocated
+memory zones and their respective capacities, which serves as the log
+queue during the early phase of the system bootstrap.</p>
+<p>After establishing the printk_rb_dynamic ring buffer infrastructure,
+setup_log_buf() invokes the function add_to_rb() to copy the archived
+log payload out of the static ring buffer printk_rb_static over into the
+new printk_rb_dynamic repository, while simultaneously computing the
+absolute residual free space remaining within the log buffer.</p>
+<p>Inside the setup_log_buf() routine, prb is a static pointer variable
+declared outside the function scope of type struct printk_ringbuffer *,
+whose default target address references printk_rb_static. By executing
+the assignment statement prb = &amp;printk_rb_dynamic, the setup_log_buf()
+function hot-swaps the underlying queue utilized by the printk() engine
+over to printk_rb_dynamic. Consequently, it can be stated that during
+the early system boot phase, the kernel switches to this dynamic ring
+buffer architecture to manage and display system diagnostics.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="chapter_14.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="14.2 Virtual File System Buffer Initialization.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="chapter_14.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="14.2 Virtual File System Buffer Initialization.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

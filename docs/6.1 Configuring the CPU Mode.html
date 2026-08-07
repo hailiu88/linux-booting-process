@@ -1,0 +1,601 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Configuring the CPU Mode - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/6.1 Configuring the CPU Mode.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="61-configuring-the-cpu-mode"><a class="header" href="#61-configuring-the-cpu-mode">6.1 Configuring the CPU Mode</a></h2>
+<p>The head.S source file implements a global macro block named __HEAD,
+which instructs the linker mechanism to place all subsequent machine
+code within the dedicated .head.text section. The absolute baseline
+starting address of this section defines the definitive software entry
+point of the compiled Linux kernel—mapping explicitly to the address
+hosting the absolute first machine instruction to be executed by the
+kernel subsystem.</p>
+<p>Stripping away architecture-unrelated macros designated for Thumb mode
+orchestration (where guest Linux kernels targeting Cortex-M
+microcontrollers execute within the Thumb state) and BE8 instruction
+re-ordering—both of which compile to empty tokens when the build
+configuration targets standard ARM execution engines—and omitting the
+extended multi-dimensional paging structures designed to support 40-bit
+physical address extensions (LPAE) supported under ARMv7-A profiles,
+this baseline assembly setup can be streamlined into the following
+functional loop:</p>
+<pre><code>    .arm
+    __HEAD
+ENTRY(stext)
+    safe_svcmode_maskall r9
+    mrc    p15, 0, r9, c0, c0                	@ Acquire CPU ID
+    bl    __lookup_processor_type	@ r5=procinfo r9=CPU ID
+    movs    r10, r5                   		@ Invalid processor (r5=0)?
+    beq    __error_p
+    adr    r3, 2f
+    ldmia    r3, {r4, r8}
+    sub    r4, r3, r4                   		 @ (PHYS_OFFSET - PAGE_OFFSET)
+    add    r8, r8, r4                    		@ PHYS_OFFSET
+    bl    __vet_atags
+#ifdef CONFIG_ARM_PATCH_PHYS_VIRT
+    bl    __fixup_pv_table
+#endif
+    bl    __create_page_tables
+    ldr    r13, =__mmap_switched        @ Address to jump to after MMU has been enabled
+    badr    lr, 1f                    @ Return (PIC) address
+    mov    r8, r4                    @ Set TTBR1 to swapper_pg_dir
+    ldr    r12, [r10, #PROCINFO_INITFUNC]
+    add    r12, r12, r10
+    ret    r12
+1:    b    __enable_mmu
+ENDPROC(stext)
+    .ltorg
+2:    .long    .
+    .long    PAGE_OFFSET
+</code></pre>
+<p>Within this code block, the initial execution segment:</p>
+<pre><code>safe_svcmode_maskall r9
+    mrc    p15, 0, r9, c0, c0
+    bl    __lookup_processor_type
+    movs    r10, r5
+    beq    __error_p
+</code></pre>
+<p>guarantees that the processing CPU core is forced into Supervisor (SVC)
+mode, masks out all incoming asynchronous hardware interrupts, and
+identifies the explicit processor architecture type. The token
+safe_svcmode_maskall expands to a foundational macro sequence engineered
+to assign CPU processing modes and silence interrupt lines, passing
+register r9 as a scratch workspace register to the macro block. The
+programmatic workflow tracking this initial pipeline is structured as
+follows:</p>
+<center>
+<figure>
+<img src="./media/image48.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-1 Supervisor (SVC) Mode Setup and Interrupt Masking Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>The instruction mrc p15, 0, r9, c0, c0 issues a coprocessor transaction
+to pull the contents of register C0 from the CP15 coprocessor space,
+storing the data word inside scratch register r9. This internal CP15 C0
+register serves as the core processor identification register housing
+the hardware CPU ID parameters.</p>
+<p>The __lookup_processor_type subroutine searches the compiled
+architecture tables to resolve the exact silicon profile matching the
+active processor core. This tracking routine relies strictly on two
+system-wide positional constants: PAGE_OFFSET and PHYS_OFFSET. To parse
+the architectural functionality of these constants, it is necessary to
+establish the low-level concepts governing virtual addressing, physical
+addressing, kernel space, and user space (commonly referenced as kernel
+mode and user mode states). These fundamental networking and memory
+design paradigms are outlined below.</p>
+<p>Depending on specific CPU microarchitectures and individual platform
+engineering layouts, the absolute starting boundaries and linear
+capacities of the volatile memory matrix vary widely. Because the Linux
+kernel provides native compatibility for an expansive taxonomy of
+disparate processor architectures and system topologies, the
+overwhelming majority of the codebase is written cleanly in the C
+programming language. Hardcoding absolute, literal memory coordinates
+within these portable software layers would make the codebase highly
+rigid and degrade its architectural scalability.</p>
+<p>To abstract away these hardware variations, the Linux memory management
+framework acts as if all available system-wide address envelopes reside
+within a single uniform virtual boundary space extending from 0x00000000
+to 0xFFFFFFFF; this abstract addressing layout defines the Virtual
+Address (VA) space. When system software initiates a memory access
+routine, the integrated Memory Management Unit (MMU) handles translation
+loops to map the abstract virtual coordinate to its true physical
+address layout on the silicon. Consequently, the CPU core executes
+instructions exclusively within the virtual address domain, whereas the
+underlying physical memory components consume sectors mapped inside the
+physical address domain.</p>
+<p>The Linux kernel bifurcates this 4 GB virtual memory space (0x00000000
+to 0xFFFFFFFF) into two mutually isolated runtime zones: user space and
+kernel space. User-space applications are restricted to executing within
+the boundaries of user space and are barred from cross-accessing or
+corrupting kernel memory; conversely, low-level core kernel routines
+execute within kernel space.</p>
+<p>Mainline Linux implements exactly four split-ratio memory configurations
+to manage this layout. When the preprocessor build flag evaluates to
+CONFIG_VMSPLIT_1G, the kernel space envelope is mapped to span from
+0x40000000 to 0xFFFFFFFF. Under the CONFIG_VMSPLIT_2G configuration
+profile, the kernel partition scales to occupy 0x80000000 to 0xFFFFFFFF.
+Toggling the switch to CONFIG_VMSPLIT_3G_OPT establishes a kernel memory
+allocation window spanning from 0xB0000000 to 0xFFFFFFFF. Finally, under
+the standard CONFIG_VMSPLIT_3G ratio allocation profile, the kernel
+space is assigned to occupy the top 1 GB segment extending from
+0xC0000000 to 0xFFFFFFFF. Enforcing these build flag allocations is
+handled during the configuration phase, typically by appending explicit
+configuration directives (such as declaring CONFIG_VMSPLIT_1G=y) within
+the architecture board templates managed under the
+git/arch/arm/configs/*_defconfig path.</p>
+<p>The constant parameter PHYS_OFFSET defines the absolute starting
+boundary address tracking the volatile memory array inside the hardware
+physical memory map. Conversely, PAGE_OFFSET registers the absolute
+starting virtual address allocating the base boundary of the protected
+kernel space. The hierarchical interface relationship linking virtual
+addresses, physical addresses, user space, kernel space, PHYS_OFFSET,
+and PAGE_OFFSET is illustrated in the structural diagram below:</p>
+<center>
+<figure>
+<img src="./media/image49.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-2 Layout Mapping of the Linux Address Space</p>
+</figcaption>
+</figure>
+</center>
+Processor Lookup Subroutine and Argument Verification
+<p>Having introduced the foundational paradigms of virtual and physical
+addressing layout configurations, this section evaluates the low-level
+ARM-assembly processor information discovery routine. The assembly
+implementation code for this subsystem is structured as follows:</p>
+<pre><code>__lookup_processor_type:
+    adr    r3, __lookup_processor_type_data
+    ldmia    r3, {r4 - r6}
+    sub    r3, r3, r4                		@ get offset between virt &amp; phys
+    add    r5, r5, r3                		@ convert virt addresses to
+    add    r6, r6, r3                		@ physical address space
+1:    ldmia    r5, {r3, r4}                	@ value, mask
+    and    r4, r4, r9                		@ mask wanted bits
+    teq    r3, r4
+    beq    2f
+    add    r5, r5, #PROC_INFO_SZ        @ sizeof(proc_info_list)
+    cmp    r5, r6
+    blo    1b
+    mov    r5, #0                    		@ unknown processor
+2:    ret    lr
+ENDPROC(__lookup_processor_type)
+    .align    2
+    .type    __lookup_processor_type_data, %object
+__lookup_processor_type_data:
+    .long    .
+    .long    __proc_info_begin
+    .long    __proc_info_end
+    .size    __lookup_processor_type_data, . - __lookup_processor_type_data
+</code></pre>
+<p>Upon concluding the execution of this routine, register r9 preserves the
+hardware CPU ID signature, while register r5 registers the absolute
+physical destination address pointing to the matched processor metadata
+record. First, consider the trailing tracking directives block:</p>
+<pre><code>__lookup_processor_type_data:
+    .long    .
+    .long    __proc_info_begin
+    .long    __proc_info_end
+</code></pre>
+<p>The assembly evaluation directive .long . writes the node's own
+compiled virtual execution address directly into the memory location
+mapped by the label __lookup_processor_type_data. The subsequent two
+contiguous storage assignments cache the virtual linking addresses
+bounding the symbols __proc_info_begin and __proc_info_end into the
+next two sequential memory slots.</p>
+<p>The physical hardware metrics and processor descriptors tracking every
+silicon architecture natively supported by the compiled Linux kernel are
+clustered contiguously inside the memory region bounded by
+__proc_info_begin and __proc_info_end. These boundary markers are
+synthesized dynamically by the linker utility during compilation and are
+stored strictly as virtual addresses.</p>
+<p>Because these data blocks are organized using virtual linking targets,
+and because the Memory Management Unit (MMU) has not yet been
+initialized at this point in the boot sequence, any programmatic attempt
+to read these processor configurations requires converting their virtual
+offsets to physical address coordinates.</p>
+<p>The initial instruction of the subroutine calculates the precise
+physical address hosting the __lookup_processor_type_data pointer
+table (adding the Program Counter register value to the immediate
+relative byte offset of the label) and writes it into register r3. Using
+r3 as an absolute tracking base address, the ldmia command block loads
+the values of the compiled virtual anchors—representing .,
+__proc_info_begin, and __proc_info_end—into registers r4, r5, and
+r6 respectively.</p>
+<p>The instruction sub r3, r3, r4 computes the precise translation delta
+separating the label's runtime physical position from its link-time
+virtual address. Leveraging this constant offset vector allows virtual
+memory descriptors to be converted directly to physical address paths
+(as shown in Figure 6-2). The execution commands add r5, r5, r3 and add
+r6, r6, r3 recalculate the virtual boundaries of __proc_info_begin and
+__proc_info_end into the active physical memory map.</p>
+<p>The subsequent loop fetches individual processor blocks from memory and
+executes a mask-and-test evaluation against the hardware CPU ID
+signature cached inside register r9 (originally read from the CP15
+coprocessor). If a valid record matching the signature is resolved, the
+loop terminates, and register r5 contains the physical address hosting
+that processor information structure. If the search pointer traverses
+the entire array from __proc_info_begin to __proc_info_end without
+finding a matching hardware signature, register r5 is cleared to zero,
+and the function returns. The sequential operational loop tracking this
+routine is mapped out below:</p>
+<center>
+<figure>
+<img src="./media/image50.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-3 Processor Information Lookup Flowchart</p>
+</figcaption>
+</figure>
+</center>
+Upon returning from the processor discovery subroutine, the kernel
+calculates the physical-to-virtual memory map delta (PHYS_OFFSET -
+PAGE_OFFSET) and resolves the starting physical boundaries of RAM. It
+then enters the \_\_vet_atags subroutine to validate the runtime
+parameters handed down from U-BOOT.
+<p>U-BOOT passes platform parameters over to the guest Linux kernel via one
+of two legacy or modern interface protocols. On modern,
+Device-Tree-aware kernel compilation profiles, U-BOOT writes the
+absolute physical base address hosting the Flattened Device Tree binary
+blob into register r2. On legacy, non-Device-Tree targets, U-BOOT uses
+register r2 to pass the baseline pointer address referencing a
+structured list of parameters (atag list). Typically, U-BOOT places
+these environment lists or .dtb files within the initial 16 KB margin of
+physical RAM; the bootloader decompression routines and the early kernel
+instructions are fenced off to prevent overwriting this data window.</p>
+<p>If the active kernel incorporates Device Tree capabilities, the
+validation engine interrogates the physical memory cell pointed to by
+register r2 to verify if it matches the Device Tree magic signature
+word. If the parsed cell matches the identifier signature, r2 contains a
+valid DTB container; otherwise, the payload is flagged as invalid. Under
+little-endian byte ordering models, this constant magic identifier
+matches the word 0xEDFE0DD0, whereas big-endian architectures store the
+signature as the big-endian word 0xD00DFEED.</p>
+<p>Conversely, if the kernel is compiled without Device Tree capability, it
+interrogates the initial 4-byte tracking cell pointed to by register r2
+to check for the signature values 0x00000005 (representing parameter
+size ATAG_CORE_SIZE) or 0x00000002 (representing an empty base parameter
+layout, ATAG_CORE_SIZE_EMPTY). If this initial integrity pass fails, the
+tracking location is discarded as an invalid parameter array. If the
+initial word is confirmed, the engine scans the next contiguous 8-byte
+data field to check for the explicit parameter key word ATAG_CORE
+(0x54410001). If this second validation loop matches the token
+signature, the memory reference inside r2 is registered as a fully
+authenticated, legal atag parameter array.</p>
+<p>If the verification pass rejects the memory structure pointed to by r2
+as an invalid DTB blob or unparseable atag array, register r2 is cleared
+to zero before control is returned to the calling function, informing
+downstream routines that the boot argument tracking reference is
+invalid.</p>
+<p>The low-level assembly source code defining the __vet_atags validation
+routine is structured as follows:</p>
+<pre><code>__vet_atags:
+    tst    r2, #0x3                    		@ aligned?
+    bne    1f
+    ldr    r5, [r2, #0]
+#ifdef CONFIG_OF_FLATTREE
+    ldr    r6, =OF_DT_MAGIC            		@ is it a DTB?
+    cmp    r5, r6
+    beq    2f
+#endif
+    cmp    r5, #ATAG_CORE_SIZE        	@ is first tag ATAG_CORE?
+    cmpne r5, #ATAG_CORE_SIZE_EMPTY
+    bne    1f
+    ldr    r5, [r2, #4]
+    ldr    r6, =ATAG_CORE
+    cmp    r5, r6
+    bne    1f
+2:    ret    lr                        			@ atag/dtb pointer is ok
+1:    mov    r2, #0
+    ret    lr
+ENDPROC(__vet_atags)
+</code></pre>
+<p>Because the syntactical composition of this assembly segment is linear,
+it does not require a detailed standalone execution flowchart.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="chapter_6.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="6.2 Modifying the Address Translation Routines.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="chapter_6.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="6.2 Modifying the Address Translation Routines.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

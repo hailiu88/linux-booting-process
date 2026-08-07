@@ -1,0 +1,927 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Page Swapping and Virtual Memory Mapping - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/15.4 Page Swapping and Virtual Memory Mapping.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="154-page-swapping-and-virtual-memory-mapping"><a class="header" href="#154-page-swapping-and-virtual-memory-mapping">15.4 Page Swapping and Virtual Memory Mapping</a></h2>
+<p>Within the Linux system, each process possesses its own unique virtual
+memory space, and the available virtual memory capacity within each
+space is completely unconstrained by the literal size of the physical
+memory. When the memory footprint demanded by the active processes
+surpasses the physical memory capacity, the operating system writes
+portions of the physical memory that are currently unutilized out onto
+an external storage device. This external storage space dedicated to
+temporarily preserving physical memory payloads is designated as the
+swap partition. To facilitate seamless file swapping operations, Linux
+reserves specific lookaside buffers within the virtual memory space for
+disk file swapping consumption.</p>
+<p>Because Linux natively supports multi-process execution, files or
+library functions loaded into memory might be concurrently utilized by
+multiple independent processes. If these files or library functions had
+to be re-read from the hard disk drive upon every single invocation, it
+would drastically degrade program execution velocity. To circumvent this
+bottleneck, Linux also carves out dedicated tracking buffers utilized to
+preserve this shared data.</p>
+<p>Throughout their execution lifecycles, programs generate a substantial
+volume of temporary runtime data. Due to the microarchitectural
+characteristics of computer hardware, aggregating this data together not
+only optimizes overall memory utilization efficiency and streamlines
+memory management but also enables the CPU to access data via immediate
+addressing or direct addressing modes rather than indirect pointing
+mechanisms. This effectively minimizes address arithmetic overhead and
+elevates program processing throughput, giving rise to the concepts of
+the heap and the stack. Each individual process maintains an independent
+heap and stack, which serve as localized buffers for tracking temporary
+data.</p>
+<p>Although the lookaside buffers dedicated to disk file swapping vary
+slightly from the standard process heap and stack setups, these two
+categories of memory regions share a core characteristic: their raw
+physical targets cannot be interfaced with directly via unmapped virtual
+addresses, meaning their high-level buffer management workflows share
+significant commonality. Consequently, Linux adopts a unified
+infrastructure to manage both buffer categories, introducing variances
+solely within their concrete architectural mapping methodologies.</p>
+<p>To streamline buffer orchestration, Linux categorizes virtual memory
+tracking structures into two primary functional types. The first type is
+dedicated to storing data consumed dynamically by running applications;
+this category of virtual memory region is designated as anonymous
+memory. Both the process heap and stack belong to the anonymous memory
+classification. The alternative memory type is dedicated to executing
+data swapping passes with the hard disk drive, a category designated as
+file-backed memory. File-backed memory zones are utilized to cache files
+read from or written to disks, swap partition files, shared library
+functions, and the binary execution code of the program itself. Figure
+15-11 illustrates the explicit mapping relationships between various
+file types and the virtual address canvas.</p>
+<center>
+<figure>
+<img src="./media/image125.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-11 Mapping Relationships between Various File Categories and
+Virtual Memory</p>
+</figcaption>
+</figure>
+</center>
+<p>Linux differentiates between anonymous memory and file-backed memory by
+evaluating the least significant bit (b0) of the mapping field enclosed
+within the physical page frame descriptor struct page. When this least
+significant bit (the PAGE_MAPPING_ANON bit) is set to 1, it indicates
+that the current page frame maps to anonymous memory; under this
+scenario, the mapping pointer references a specialized structural
+backbone named struct anon_vma (see §15.4.2). Conversely, when this
+least significant bit evaluates to 0, it signifies that the current page
+frame maps to file-backed memory, under which constraint the mapping
+field acts as a valid pointer referencing an address space tracking
+structure (struct address_space).</p>
+<h3 id="1541-memory-eviction-and-page-release"><a class="header" href="#1541-memory-eviction-and-page-release">15.4.1 Memory Eviction and Page Release</a></h3>
+<p>When utilizing file-backed memory, the physical memory capacity
+constraints require the processes to frequently execute data swapping
+passes with disk storage (encompassing both regular files and swap
+partition files). An efficient file swapping mechanism minimizes the
+frequency of disk read/write cycles, thereby enhancing overall program
+execution throughput. Linux achieves this by managing five fixed-length
+Least Recently Used (LRU) lists classified into three operational
+categories to guide page swapping operations. These five LRU lists
+encompass anon_active, anon_inactive, file_active, file_inactive, and
+unevictable. Among them, anon_active and anon_inactive are dedicated to
+orchestrating page swapping for anonymous memory; file_active and
+file_inactive handle page swapping for file-backed memory; and the
+unevictable list preserves pages that are structurally prohibited from
+being evicted to disk storage. For instance, when Linux mounts a ramfs
+filesystem, the files contained within it must remain permanently
+resident in physical memory throughout the system runtime lifecycle.</p>
+<p>When a process executes a memory read operation, if the targeted page
+frame already resides on an active list, the subsystem promotes this
+page to the head boundary of that active list, shunting the preceding
+entries downward by one slot position. If the targeted page is located
+on an inactive list, the system similarly promotes this page to the head
+boundary of the corresponding active list, while shunting the pages
+originally preceding it on the inactive list downward by one slot
+position. If a page fault exception manifests—indicating that the
+requested payload data is completely absent from physical memory—the
+operating system's page fault handler evicts and releases the page
+frame situated at the tail boundary of the corresponding inactive list
+(xx_inactive) (see §15.6) and reads the correct data block back from
+disk storage. Upon initially loading a page from disk, the newly fetched
+page frame is positioned at the head boundary of the inactive list,
+pushing the remaining elements on that list downward by one slot
+position. To maintain clarity, this overview simplifies the operational
+tracking loops of the LRU subsystem. In practical execution, additional
+metrics are factored in; for instance, when deciding whether to promote
+a page from an inactive list to an active list, the allocator evaluates
+the chronological interval between two consecutive accesses to the exact
+same page, thereby preventing thrashing where a single page is
+repeatedly evicted and re-read. These lists are similarly manipulated
+during large-scale page reclamation passes. Figure 15-12 illustrates
+several common structural state changes across the LRU lists.</p>
+<center>
+<figure>
+<img src="./media/image126.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-12 Structural Variations of LRU Lists throughout Page Access
+Operations</p>
+</figcaption>
+</figure>
+</center>
+<p>The majority of LRU list structural topologies and memory eviction
+routines are defined within the source file git/mm/swap.c. The internal
+state transformation and relocation loops across these lists are
+executed by the function mark_page_accessed(). Readers interested in
+pursuing deeper architectural specifics can review the source code
+contained within that file.</p>
+<h3 id="1542-mapping-between-virtual-addresses-and-caching-buffers"><a class="header" href="#1542-mapping-between-virtual-addresses-and-caching-buffers">15.4.2 Mapping Between Virtual Addresses and Caching Buffers</a></h3>
+<p>Both anonymous memory and file-backed memory reside within dedicated
+private caching buffers. The execution program is unable to interface
+with these buffers directly via unmapped virtual addresses; instead, it
+must employ a mapping layer to bind virtual addresses or file offsets to
+the caching buffer space, thereby ensuring the correct dataset can be
+retrieved. To achieve structural mappings from disk files and anonymous
+memory domains into the runtime caching buffers, Linux defines four core
+data structures. Their primary structural technical objective is to
+govern the process's virtual memory intervals, and to enable the
+system—upon encountering a page eviction or a Copy-on-Write (CoW)
+cycle—to rapidly perform a reverse lookup from a physical page frame
+back to all referencing virtual memory areas.</p>
+<p>These primary architectural structures encompass:</p>
+<ul>
+<li>
+<p>struct mm_struct (The mm Structure):<br>The memory descriptor canvas. Exactly one instance is assigned to each
+individual process, which encapsulates fields tracking the localized
+cache areas consumed by the thread context, the root node of the
+process's VMA red-black tree, the aggregate address space footprint,
+the cumulative number of virtual page frames, the precise boundary
+markers for the heap, stack, data, code, and uninitialized variable
+(bss) segments, a structural tracking pointer referencing the
+standalone VMA sequential linked list, environment variable segments,
+alongside diverse runtime statistic counters and memory watermarks.
+The VMA red-black tree is structurally composed of all vm_area_struct
+instances tied to this parent mm_struct.</p>
+</li>
+<li>
+<p>struct vm_area_struct (The VMA Structure):<br>The virtual memory area descriptor. It delineates a single physically
+non-contiguous but virtually continuous block of memory space assigned
+to a process. It primarily contains the sequential pointer hooks
+vm_next and vm_prev utilized to thread together the process's
+absolute buffer chain, the virtual address starting boundary, the
+virtual address ending boundary, the structural red-black tree node
+tracking member vm_rb used to hook the VMA instance directly onto the
+mm_struct parent tree, a pointer tracking back to the owner mm_struct,
+an rb tracking node utilized to attach the VMA container into the
+global interval tree address_space-&gt;i_mmap tracking backed disk
+files, a pointer targeting the explicit anon_vma context managing this
+caching zone, a list head tracking member anon_vma_chain grouping all
+anon_vma_chain bridge structures intersecting this VMA node, and a
+vm_file structural file pointer referencing the backing file
+descriptor (which evaluates as a null pointer when tracking anonymous
+memory blocks).</p>
+</li>
+<li>
+<p>struct anon_vma (The AV Structure):<br>While resolving a virtual address down to its corresponding physical
+address is efficiently handled via forward page table walks, the
+inverse sequence—mapping a raw physical address back to its
+referencing virtual addresses (known as reverse mapping or
+rmap)—represents a significant microarchitectural challenge due to
+the unidirectional design of page tables. A critical application
+context for reverse mapping manifests during memory eviction passes:
+the kernel must perform an rmap lookup to discover every virtual
+address referencing the target physical page frame, and subsequently
+modify those page table entries to point directly to the page's slot
+within the swap partition.<br>The primary functional purpose of the anon_vma structure is to
+facilitate high-performance reverse mapping queries. It encapsulates 6
+distinct fields, where the root field points to the definitive root
+node of the active anon_vma ancestry tree, and the parent field
+references the corresponding anon_vma context of the parent process
+that invoked the original fork() cycle. Across multi-generational
+process hierarchies, parent-child memory sharing paths introduce
+complex exclusive versus shared memory mapping boundaries. To
+streamline tracking, Linux arranges these process structures
+hierarchically into an ancestry tree, where all descendant anon_vma
+instances resolve their lineage back to the initial ancestral root via
+the root pointer.<br>The degree counter field logs the total count of direct child anon_vma
+structures; when degree evaluates to less than 2, the current
+structure is eligible to serve as the immediate parent anon_vma
+framework for a subsequent child process layer.<br>The rb_root field anchors the root node of a specialized interval
+red-black tree composed of anon_vma_chain bridge structures, which
+links all VMAs intersecting the current anon_vma instance. This
+specific interval tree structure aggregates all referencing VMAs
+across the entire system that currently map this chunk of anonymous
+memory (achieved structurally via the intermediary anon_vma_chain
+components). This binary search tree links all concurrent VMAs
+belonging to distinct processes (or threads) that share access to the
+same anonymous physical memory frames. Consequently, it encompasses
+not only the local process VMA but also the VMAs of all child and
+grandchild descendant processes generated via fork() cycles, provided
+these descendants continue to share this specific memory interval. If
+a descendant process triggers a Copy-on-Write (CoW) exception, Linux
+creates a fresh memory block and hooks a newly instantiated anon_vma
+structure onto its local red-black interval tree, thereby
+transitioning it to manage its own isolated anonymous memory pages.</p>
+</li>
+<li>
+<p>struct anon_vma_chain (The AVC Structure):<br>The primary architectural role of the anon_vma_chain structure is to
+act as a bridge establishing a clean intersection between the anon_vma
+context and individual VMAs, which it accomplishes by configuring its
+vma and anon_vma fields to point directly to their respective target
+structures. Furthermore, this structure serves a dual purpose as a
+standard list node labeled same_vma (hooked onto the list head
+anchored at the VMA's local anon_vma_chain field) and as an active
+binary tree node labeled rb (hooked into the interval red-black tree
+anchored at the anon_vma structure's rb_root field).<br>The AVC tracking chains are woven together via the same_vma list
+element, and the base head of this chain is managed within the
+anon_vma_chain field of the corresponding VMA structure, thereby
+logging all distinct anon_vma contexts intersecting that specific VMA
+container. Concurrently, the interval red-black tree is threaded
+together via the rb node element, tracking all distinct VMAs that are
+managed under the jurisdiction of the specified anon_vma structure.<br>Within the reverse mapping subsystem of the Linux memory management
+framework, the anon_vma and anon_vma_chain structures work in tandem
+to solve the core architectural problem of discovering every virtual
+memory area mapping a given anonymous physical page frame. The
+internal red-black tree managed inside the anon_vma instance preserves
+a comprehensive index of all VMAs that could potentially map the same
+physical page frames.</p>
+</li>
+</ul>
+<p>Figure 15-13 details the structural linkages and pointer topologies
+mapped out across these distinct descriptor blocks, providing a clear
+visualization of how these structures interact.</p>
+<center>
+<figure>
+<img src="./media/image127.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-13 Structural Relationships among the mm_struct, Individual
+VMAs, and VMA Tracking Chains</p>
+</figcaption>
+</figure>
+</center>
+<p>As illustrated in Figure 15-13, the initial vm_area_struct instance
+belonging to a process can be directly resolved from its parent
+mm_struct. Evaluating this VMA structure yields multiple parameters
+regarding the address space footprint currently consumed by the process.
+Furthermore, via the mm_struct, the system can interface with the global
+VMA red-black tree, allowing the kernel to rapidly look up a specific
+VMA instance of interest.</p>
+<center>
+<figure>
+<img src="./media/image128.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-14 Linked List Composed of All VMAs Belonging to a Process</p>
+</figcaption>
+</figure>
+</center>
+<p>Figure 15-14 shows the contiguous tracking chain composed of all VMAs
+assigned to a process. Traversing this sequential list enables the
+kernel to inspect every VMA structure registered under the process
+context. The primary drawback of this linear structure is its high
+search latency, making it ideal only for scenarios that mandate a full
+sweep across all VMAs.</p>
+<center>
+<figure>
+<img src="./media/image129.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-15 Linked List of AVCs Mapping to an Identical VMA</p>
+</figcaption>
+</figure>
+</center>
+<p>When a new process is created within the system, a corresponding
+anon_vma_chain (AVC) bridge structure is instantiated and bound directly
+to the process's local VMA structure. When this process subsequently
+forks a child process, it invokes the routine dup_mmap() to clone the
+VMA structures (for deeper analysis, developers can consult the
+implementation flow encompassing kernel_clone(), fork_idle(),
+copy_process(), copy_mm(), dup_mm(), and dup_mmap() within the source
+file git/kernel/fork.c). After cloning the parent process's VMA
+structures, the routine duplicates the parent's page table entries into
+the translation tables of the child process. This architectural
+optimization guarantees that the child process initially consumes no new
+backing physical memory. A fresh physical page block is allocated to the
+child process only when it generates a write transaction targeting the
+memory interval mapped by that VMA.</p>
+<p>Following the VMA duplication stage, the kernel invokes anon_vma_fork(),
+which calls anon_vma_clone() to traverse the parent process's internal
+AVC linked list (anchored at the list head anon_vma_chain). For each AVC
+encountered during this sweep, a corresponding AVC structure is
+instantiated for the child context. The newly created AVC is populated
+with the parent's matching anon_vma reference alongside the child's
+newly cloned VMA reference. Following this configuration, the routine
+appends this new AVC instance onto the list headed by the child VMA's
+anon_vma_chain field, and inserts it into the interval red-black tree
+rooted at the anon_vma's rb_root field. This multi-stage cloning
+pipeline replicates the parent's anon_vma tracking chains over to the
+child process context. The explicit technical purpose of this setup is
+to establish an appropriate anon_vma mapping relationship for the
+child's new VMA, enabling the parent and child processes to share the
+underlying anonymous physical page frames while seamlessly supporting
+Copy-on-Write (CoW) exceptions and rmap reverse lookups.</p>
+<p>Figure 15-15 illustrates the linked list layout anchored at the VMA's
+anon_vma_chain field, which aggregates all AVC components intersecting
+that singular VMA node. This specific list is threaded together
+sequentially via the same_vma field. Figure 15-16 illustrates the
+interval red-black tree rooted at the anon_vma structure's rb_root
+field, which aggregates all AVC elements mapped under its jurisdiction.
+This binary search tree scales dynamically as a byproduct of process
+fork cycles, and the attached AVC elements map back to all VMAs across
+different address spaces that intersect this root anon_vma node. Figure
+15-17 diagrams the structural layout of the child process's AVC linked
+list prior to encountering a Copy-on-Write (CoW) transaction.</p>
+<center>
+<figure>
+<img src="./media/image130.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-16 Interval Red-Black Tree Rooted at the rb_root Field of the
+anon_vma</p>
+</figcaption>
+<img src="./media/image131.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-17 Layout of anon_vma Management Tracking Following a Process
+Fork (Prior to CoW Execution)</p>
+</figcaption>
+</figure>
+</center>
+<p>The structural interconnections among the VMA, AVC, and AV descriptors
+can be visualized as an intersection network in Figure 15-18. Here, the
+AVC functions analogously to an intersection switch array, establishing
+a flexible, clean many-to-many relationship mapping between individual
+VMAs and anon_vma contexts.</p>
+<center>
+<figure>
+<img src="./media/image132.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-18 Comprehensive Topological Interconnections among the VMA,
+AV, and AVC Structures</p>
+</figcaption>
+</figure>
+</center>
+<p>The programmatic routines responsible for identifying every virtual
+memory region mapping a common physical page frame are encapsulated
+inside central reverse mapping handlers such as page_referenced_anon().
+Its standardized execution logic is executed as follows:</p>
+<ul>
+<li>
+<p>Extracting the target anon_vma from the physical page descriptor
+(page-&gt;mapping):<br>The page-&gt;mapping pointer of an anonymous physical page frame does
+not link directly to a filesystem inode; instead, it points to the
+managing anon_vma structural backbone.</p>
+</li>
+<li>
+<p>Traversing each individual AVC element hosted inside the anon_vma
+interval red-black tree:<br>The kernel iterates over the tree entries to step through the
+intersecting references.</p>
+</li>
+<li>
+<p>Resolving the specific VMA linked to each candidate AVC:<br>The routine extracts a valid VMA mapping that shares access to that
+physical page block.</p>
+</li>
+</ul>
+<p>By continuously traversing all AVC entities attached to the anon_vma
+interval red-black tree, the memory subsystem can resolve every virtual
+memory area mapping that identical physical page block.</p>
+<p>Beyond its role in orchestrating basic reverse memory mappings, this
+interval red-black tree—rooted at the anon_vma's rb_root field—is
+leveraged by the Kernel Same-page Merging (KSM) subsystem. The KSM
+engine scans the tree structure to evaluate identical physical memory
+pages that are eligible to be safely consolidated into a single shared
+page to optimize the system's memory footprint.</p>
+<h3 id="1543-mapping-anonymous-memory-to-caching-buffers"><a class="header" href="#1543-mapping-anonymous-memory-to-caching-buffers">15.4.3 Mapping Anonymous Memory to Caching Buffers</a></h3>
+<p>Mapping anonymous memory to caching buffers involves designating a
+specified virtual memory range as a cache block. Following initial
+parameter compliance validations, the primary technical objective of
+this routine is to initialize the diverse fields of the vm_area_struct
+(VMA) container, aligning the VMA with the targeted memory area and
+ensuring it satisfies all required protection and operational
+attributes. Figure 15-19 illustrates the systematic workflow for mapping
+a specified memory region into a caching buffer.</p>
+<center>
+<figure>
+<img src="./media/image133.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-19 Execution Workflow of Anonymous Memory Mapping</p>
+</figcaption>
+</figure>
+</center>
+<p>Throughout this mapping procedure, the subsystem often needs to search
+through existing VMAs to determine whether the starting address of the
+designated region already resides within a virtual memory space
+allocated to another VMA. This lookup tracking sequence traverses the
+global red-black tree (whose root is anchored at the vm_rb field)
+managed within the process's mm_struct. It compares the target starting
+virtual address address against the vm_start and vm_end boundary flags
+of each VMA encountered during the tree walk. If the comparison
+satisfies the condition vma-&gt;vm_start &lt;= address &lt; vma-&gt;vm_end, it
+indicates that the virtual memory space managed by that specific VMA
+encapsulates the target starting address. The topological relationships
+among the various data structures involved in this lookup process are
+illustrated in Figure 15-20.</p>
+<center>
+<figure>
+<img src="./media/image134.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-20 Resolving the Corresponding VMA via a Virtual Address
+Target</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="1544-mapping-file-backed-memory-to-caching-buffers"><a class="header" href="#1544-mapping-file-backed-memory-to-caching-buffers">15.4.4 Mapping File-Backed Memory to Caching Buffers</a></h3>
+<p>File-backed memory is utilized to cache disk files into designated
+regions of physical memory. Because disk files, unlike anonymous memory,
+do not natively reside within the virtual address space, the operating
+system must employ a specialized mechanism to link disk files with
+virtual memory. This linkage is achieved via the address space structure
+(struct address_space), which is defined within the header file
+git/include/linux/fs.h. The address space structure works in tandem with
+the kernel-space file descriptor (struct file) and the index node
+structure (struct inode) to accomplish the mapping of disk files into
+the virtual memory space.</p>
+<p>The address space structure defines objects that can be cached and
+mapped. It encloses multiple tracking fields, including the host object
+owning this structure (either an inode or a block storage device) and
+the total number of cached pages. It also encapsulates up to 22
+operational callbacks, such as writing pages, reading pages, setting
+dirty page flags, page isolation, and page migration. Among these, the
+field responsible for tracking mapping relationships is i_mmap. This
+field serves as the root of an interval red-black tree composed of all
+VMAs cached within this memory buffer. The VMA nodes within this binary
+tree are threaded together via the shared.rb node member enclosed within
+each vm_area_struct. During the execution of a file-backed mapping, the
+system invokes the function vma_link_file() to insert the VMA node into
+this red-black tree, thereby binding the file to the VMA. Utilizing this
+binary tree allows the kernel to query the VMAs corresponding to a
+specific file and determine the mapped addresses of the file within the
+backing memory buffer. Figure 15-21 illustrates the interval red-black
+tree utilized for this caching mechanism.</p>
+<p>Another highly critical field inside the address space structure is
+i_pages. This field is implemented as an extensible array (XArray),
+which encapsulates the descriptors of all cached physical pages (in
+kernel versions 5.15 and earlier; newer versions store pointers to
+struct folio data structures instead). Utilizing the diverse helper
+functions provided by the XArray subsystem, the kernel can directly
+perform read, write, and flag modification operations on the cached page
+descriptors using the index field of the physical page frames.</p>
+<center>
+<figure>
+<img src="media/image136.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-21 Interval Red-Black Tree for Cached Mappings</p>
+</figcaption>
+</figure>
+</center>
+<p>The kernel-space file descriptor (struct file) describes files that have
+been opened within the system, supporting user-space operations such as
+opening, reading, writing, and closing files via functions like fopen().
+This structure encompasses fields including the file path structure
+f_path, a pointer to the index node structure f_inode, and a pointer to
+the address space structure f_mapping. It also specifies an operational
+method table via f_op, which defines handlers for file operations such
+as open, close, read, write, position querying (llseek), memory mapping
+(mmap), and retrieving unmapped areas (get_unmapped_area). The explicit
+components leveraged for cache mapping are f_mapping, f_inode, the
+mmap() method, and the get_unmapped_area() method. The mmap() method is
+responsible for mapping the file into the targeted VMA, while
+get_unmapped_area() is utilized to resolve an available unallocated
+starting address within the virtual memory space.</p>
+<p>The index node structure (struct inode) stores file metadata and serves
+as the primary repository for file diagnostics within Linux. It records
+extensive data including the file mode, User ID (uid), Group ID (gid),
+file size, file type, file modification time, last access time, several
+pointers referencing underlying disk blocks, and general administrative
+metadata. It also exposes localized methods for manipulating the file
+and the index node structure itself. The actual raw data contents of the
+file are not preserved inside the inode. The methods for executing file
+operations utilize the handlers exposed by the file descriptor, whereas
+the methods for manipulating the index node structure primarily
+encompass directory table lookups, link(), unlink(), mknod(), rmnode(),
+mkdir(), rmdir(), and setattr(). The specific field within the index
+node structure utilized for memory mapping is i_mapping, which acts as a
+pointer targeting the explicit address_space structure. The definitive
+architectural interconnections among these distinct descriptors and the
+interval red-black tree are detailed in Figure 15-22.</p>
+<center>
+<figure>
+<img src="./media/image137.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-22 Mapping Relationships Between File-Backed Memory and Disk Files</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="1545-reverse-mapping-from-physical-addresses-to-virtual-memory-addresses"><a class="header" href="#1545-reverse-mapping-from-physical-addresses-to-virtual-memory-addresses">15.4.5 Reverse Mapping from Physical Addresses to Virtual Memory Addresses</a></h3>
+<p>Due to process forking and memory sharing, a single physical page may be
+concurrently mapped to multiple distinct virtual addresses. Figure 15-23
+illustrates a scenario where, through a multi-generational process tree,
+a single physical memory page is mapped to three different virtual
+memory regions. When a child process is forked, it bridges multiple
+translation domains: its local VMA's anon_vma_chain links both to the
+parent's inherited anon_vma (utilized for reverse-mapping older, shared
+pages) and to a fresh, dedicated anon_vma instantiated specifically for
+the child during the fork() lifecycle (utilized for tracking future
+exclusive pages).</p>
+<center>
+<figure>
+<img src="./media/image139.png" style="width:90%;height:auto" />
+<figcaption>
+<p>
+Figure 15-23 Mapping Topologies Between Physical Memory Pages and
+Virtual Addresses</p>
+</figcaption>
+</figure>
+</center>
+<p>As established in the preceding sections, forward address translation
+relies on navigating the page tables; by evaluating a virtual address
+through the page table entries (PTEs), the system resolves the matching
+physical Page Frame Number (PFN) along with its corresponding physical
+page descriptor (struct page). Conversely, reverse mapping (rmap)
+denotes the inverse process of tracing from a physical page descriptor
+back to its referencing virtual addresses. Because page tables are
+strictly unidirectional routing structures, even in the simplest
+scenario where a physical page maps to exactly one virtual memory page,
+the system cannot directly extract the mapped virtual address or the
+governing PTE from the struct page alone. This bottleneck is magnified
+because a single physical page frame can be simultaneously mapped to
+multiple virtual pages across distinct process address spaces. This
+reverse lookup capability is a mandatory prerequisite when the memory
+subsystem evicts page content out to the swap partition or releases
+physical pages back to the allocator.</p>
+<p>In kernel versions prior to Linux 2.4, executing a reverse lookup
+required the system to traverse the page tables of every single process
+running in the system to identify all PTEs mapping a target physical
+address—a brute-force scanning pipeline that was exceptionally
+time-consuming. To resolve this architectural bottleneck, Rik Van Riel
+pioneered the conceptual framework of reverse mapping and proposed
+adding direct pointer networks to realize the lookups. However, Rik's
+initial design introduced significant memory overhead and proved
+suboptimal for production scaling.</p>
+<p>To refine this approach, Dave McCracken introduced object-based reverse
+mapping. This method was primarily tailored for file-backed memory
+reverse lookups, and the mmap() system call architecture leverages this
+paradigm. For a file-backed mapping, Dave enabled object-based rmap by
+routing the physical page descriptor's mapping pointer to reference its
+parent address_space structure.</p>
+<p>However, for anonymous mappings, the struct page's mapping field
+initially remained unassigned. To extend reverse mapping capabilities to
+anonymous memory domains, Andrea Arcangeli proposed routing the mapping
+field to reference a target VMA directly. Yet, this simple relationship
+broke down during process replication: when a process forks, a single
+inherited VMA maps to multiple disjoint page table domains across
+different address spaces, meaning a single physical address maps to
+multiple distinct virtual addresses. Consequently, mapping anonymous
+memory via a direct, singular pointer from page-&gt;mapping to a VMA was
+architecturally unviable.</p>
+<p>To overcome this structural barrier, Andrea defined the anon_vma (AV)
+and anon_vma_chain (AVC) structures. Each process utilizes AVC bridge
+elements to bind its local VMA instances to the appropriate anon_vma
+contexts. Via the unified anon_vma_chain linked lists, a process
+simultaneously tracks the shared anonymous pages inherited from its
+parent ancestry alongside its own exclusive, locally generated anonymous
+pages. The definitive structural mechanics of these tracking meshes have
+been detailed across the preceding sections introducing the AV and AVC
+subsystems.</p>
+<h3 id="1546-reverse-mapping-from-anonymous-memory-to-virtual-memory"><a class="header" href="#1546-reverse-mapping-from-anonymous-memory-to-virtual-memory">15.4.6 Reverse Mapping from Anonymous Memory to Virtual Memory</a></h3>
+<p>During anonymous memory mapping, the mapping field of the physical page
+descriptor points directly to its corresponding anon_vma structure. To
+execute a reverse mapping lookup, the system leverages this mapping
+pointer to resolve the target anon_vma context and accesses the interval
+red-black tree rooted at its rb_root field. By traversing the individual
+anon_vma_chain (AVC) entries within this binary search tree, the kernel
+can identify all VMAs that map this specific physical page descriptor
+page, thereby resolving every referencing virtual memory page across the
+system. Furthermore, by evaluating the index field of the page
+structure, the engine determines the exact page offset within the
+virtual address space managed by each VMA. The architectural connections
+among these structures and the red-black tree are illustrated in Figure
+15-24.</p>
+<center>
+<figure>
+<img src="./media/image140.png" style="width:90%;height:auto" />
+<figcaption>
+<p>
+Figure 15-24 Conceptual Schema of Anonymous Memory Reverse Mapping
+Lookups</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="1547-reverse-mapping-from-files-to-memory"><a class="header" href="#1547-reverse-mapping-from-files-to-memory">15.4.7 Reverse Mapping from Files to Memory</a></h3>
+<p>As established previously, Dave McCracken enabled reverse mapping for
+file-backed memory by routing the mapping field of the physical page
+descriptor to point directly to its parent address space structure. The
+system leverages the physical page descriptor's mapping field to locate
+the corresponding address_space structure. Via the i_mmap pointer of
+this address space structure, the engine accesses the interval red-black
+tree composed of all referencing VMAs. By traversing the diverse VMA
+nodes within this binary tree, the system resolves every VMA mapping
+that specific physical page frame, and subsequently tracks back to the
+target physical file descriptor via the VMA's vm_file field. Figure
+15-25 illustrates this multi-stage reverse mapping pipeline for
+file-backed memory.</p>
+<center>
+<figure>
+<img src="./media/image141.png" style="width:90%;height:auto" />
+<figcaption>
+<p>
+Figure 15-25 Execution Workflow of File-Backed Memory Reverse Mapping
+</p>
+</figcaption>
+</figure>
+</center>
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="15.3 Red-Black Trees.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="15.5 Page Migration.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="15.3 Red-Black Trees.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="15.5 Page Migration.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

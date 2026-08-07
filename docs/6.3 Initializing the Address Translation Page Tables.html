@@ -1,0 +1,1126 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Initializing the Address Translation Page Tables - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/6.3 Initializing the Address Translation Page Tables.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="63-initializing-the-address-translation-page-tables"><a class="header" href="#63-initializing-the-address-translation-page-tables">6.3 Initializing the Address Translation Page Tables</a></h2>
+<p>Following the runtime modifications of the address translation
+infrastructure, the next primary task inside the head.S execution path
+is the initialization of the translation page tables, preparing the
+hardware platform to engage the core virtual memory management
+sub-blocks. This early paging matrix is constructed by invoking the
+__create_page_tables subroutine. It must be explicitly noted that
+these initial translation page tables are transient, meaning they are
+utilized strictly during the early bootstrap phase.</p>
+<p>Prior to stepping into this subroutine, register r8 preserves the
+physical-to-virtual address translation offset delta, r9 holds the
+hardware CPU ID signature, and r10 targets the resolved processor
+metadata record. To systematically analyze the software workflow of this
+page table creation utility, it is necessary to detail the structural
+alignment of the ARM page table architecture.</p>
+<p>The physical base boundary hosting these temporary translation page
+tables aligns with the memory coordinates assigned to the static symbol
+swapper_pg_dir. This tracking symbol evaluates precisely to:</p>
+<p><code>swapper_pg_dir = KERNEL_RAM_VADDR - PG_DIR_SIZE</code></p>
+<p>Where the macro definitions track as:</p>
+<p><code>KERNEL_RAM_VADDR = PAGE_OFFSET + TEXT_OFFSET</code></p>
+<p>Here, TEXT_OFFSET defines the physical compile-time starting alignment
+offset of the active .text instruction section relative to the baseline
+bank origin. Consequently, KERNEL_RAM_VADDR represents the absolute
+starting virtual address allocating the executable Linux kernel code
+segment. This implies that a dedicated physical memory window equal to
+exactly TEXT_OFFSET bytes isolates the absolute starting boundary of
+kernel space (PAGE_OFFSET) from the actual entry code of the kernel
+image.</p>
+<p>Beyond being carved out to house the early level-1 translation page
+tables, this linear memory cushion stores the runtime boot argument
+vectors or DTB payloads handed down from the U-BOOT bootloader stage.
+Under standard ARM configuration templates, TEXT_OFFSET defaults to
+0x8000 (32 KB) and PG_DIR_SIZE is fixed to 0x4000 (16 KB). Depending on
+the platform architecture and memory constraints, these dimensions can
+be adjusted by developers, provided they remain sufficiently large to
+prevent address collisions or data corruption with the trailing kernel
+binary blocks.</p>
+<p>Through direct calculation, the starting virtual coordinates mapping the
+early translation page table array evaluate to:</p>
+<p><code>swapper_pg_dir = PAGE_OFFSET + TEXT_OFFSET - PG_DIR_SIZE</code></p>
+<p>The true, live physical base address allocating this table on the
+hardware is resolved by using the translation delta:</p>
+<p><code>PHYS_OFFSET + TEXT_OFFSET - PG_DIR_SIZE</code></p>
+<p>This physical mapping layout is visualized across both address domains
+in the schematics below:</p>
+<center>
+<figure>
+<img src="./media/image51.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-4 Positional Allocation Examples of the Page Table in Virtual and Physical Address Spaces</p>
+</figcaption>
+</figure>
+</center>
+<center>
+<figure>
+<img src="./media/image52.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-5 Physical Base Address Allocation of the Early Page Table</p>
+</figcaption>
+</figure>
+</center>
+<p>The structures packed into this early table block are processed
+exclusively during the initial stages of the kernel lifecycle. Once the
+memory management module becomes fully operational, the system
+completely overwrites and reallocates the active page tables to drive
+the runtime memory tracking engines of the mainline Linux system.</p>
+<h3 id="631-arm-page-tables"><a class="header" href="#631-arm-page-tables">6.3.1 ARM Page Tables</a></h3>
+<p>The Memory Management Unit (MMU) leverages page tables to execute
+runtime address translations. A page table is a structured lookup array
+composed of either 32-bit or 64-bit entries; tables using 32-bit entries
+are defined as Short-descriptor format tables, whereas tables
+implementing 64-bit entries are defined as Long-descriptor format
+tables. Each discrete descriptor entry maps an explicit virtual address
+window to its corresponding physical address boundaries, dictates the
+size envelope of that mapped region, and configures its low-level memory
+attributes and access control permissions. Whether the MMU parses
+translation lookups using the Short-descriptor or Long-descriptor format
+is governed strictly by the EAE (Extended Address Enable) bit inside the
+TTBCR (Translation Table Base Control Register). When the EAE bit is
+cleared to 0, the MMU parses Short-descriptors; when set to 1, it
+enforces Long-descriptors.</p>
+<p>The 32-bit ARM memory management subsystem natively supports both
+two-tier and three-tier translation page table cascades.
+Short-descriptor tables can be scaled to handle both single-tier and
+two-tier translation flows, whereas Long-descriptor layouts are
+processed exclusively within three-tier translation architectures; both
+descriptor formats can be scaled to address a 40-bit physical address
+space. Through these translation tables, the MMU can perform address
+translations over block units configured as sections (1 MB),
+supersections (16 MB), small pages (4 KB), or large pages (64 KB).
+Within the Linux kernel, the early bootstrap phase manages address
+translations strictly at a section-level (1 MB) granularity; once the
+baseline subsystem initializations conclude, the primitive operational
+unit shifts down to a standard page-level (4 KB) allocation model.</p>
+<p>Varying the target translation unit changes the binary layout of the
+page table descriptors, and the bit definitions of a level-1 descriptor
+differstrictly from those of a level-2 descriptor. Short-descriptor page
+tables routing level-1 translations can be formatted into four distinct
+descriptors mapping pages, sections, or supersections. On ARM processors
+enabling 40-bit Large Physical Address Extensions (LPAE), the level-1
+Short-descriptor layout implements the four binary configurations shown
+in Figure 6-6, where the initial bit configuration designates an invalid
+descriptor slot:</p>
+<center>
+<figure>
+<img src="./media/image53.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-6 Short-Descriptor Formats for ARM supporting 40-Bit Address Spaces</p>
+</figcaption>
+</figure>
+</center>
+Conversely, on legacy ARM platforms that do not implement the 40-bit
+extended physical addressing space, the level-1 Short-descriptor formats
+follow the four binary alignments detailed in Figure 6-7, where the
+initial bit configuration designates an invalid descriptor slot:
+<center>
+<figure>
+<img src="./media/image54.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-7 Short-Descriptor Formats for ARM supporting only 32-Bit Address Spaces</p>
+</figcaption>
+</figure>
+</center>
+<p>When bit 1 of the descriptor contains a logic value of 1, the entry is
+parsed as a section or supersection descriptor; under this state, bit 18
+is interrogated to differentiate between a 1 MB section and a 16 MB
+supersection. The Non-Secure (NS) bit configures the cryptographic
+security profile of the targeted memory segment, where NS = 0 restricts
+the mapped region to secure memory space, and NS = 1 exposes the block
+to non-secure space. The marker SBZ indicates that the corresponding bit
+fields are Should Be Zero. The Privileged Execute-Never (PXN) bit
+determines whether privileged software threads can execute code within
+the target memory region, and the Execute-Never (XN) flag completely
+fences off the block to prevent machine instruction execution under any
+execution state.</p>
+<p>The composite binary configurations of the TEX, C, and B bits define
+memory behavior attributes, specifying parameters such as inner/outer
+cacheability and hardware bus shareability. The Access Permission (AP)
+bitmask dictates the read/write privileges governing the memory region,
+controlling whether a page is read-only or read-write across different
+execution privilege rings. While these permission and attribute flags
+regulate instruction access and memory barriers, they do not directly
+alter address calculation loops. The actual arithmetic conversion
+vectors are managed entirely by the high-order physical base address
+bits and the upper address extensions (PA[39:32]).</p>
+<p>When a level-1 descriptor targets a 1 MB section or 16 MB supersection,
+the translation maps the coordinate directly via a single-tier lookup
+phase. Conversely, when a descriptor maps to a standard 4 KB page or 64
+KB large page, the translation loop requires a secondary level-2 page
+table lookup. Figure 6-8 maps out the Short-descriptor formatting rules
+deployed across level-2 translation tables, where the initial entry
+configuration represents an invalid descriptor slot:</p>
+<center>
+<figure>
+<img src="./media/image55.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-8 Page Table Formats Deployed Across Level-2 Translations</p>
+</figcaption>
+</figure>
+</center>
+<p>A large page descriptor defines the upper 16 bits of the physical
+address, mapping out a minimum translation step resolution equal to
+2³²⁻¹⁶ = 64 KB. A standard small page descriptor registers the upper 20
+bits of the target physical coordinate, yielding a primitive translation
+resolution equal to exactly 2³²⁻²⁰ = 4 KB.</p>
+<h3 id="632-address-translation-paradigms"><a class="header" href="#632-address-translation-paradigms">6.3.2 Address Translation Paradigms</a></h3>
+<p>Having established the layout rules of the individual descriptor types,
+this section evaluates the technical mechanics through which a Virtual
+Address (VA) is parsed and translated into a final Physical Address
+(PA). Because the Linux kernel environment optimizes its execution
+pipelines by predominantly using section descriptors and small page
+descriptors, these two specific paging models are analyzed here to
+illustrate how the ARM memory management hardware maps out target
+address spaces.</p>
+<center>
+<figure>
+<img src="./media/image56.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-9 Virtual-to-Physical Address Translation Pipeline via 1 MB
+Section Descriptors</p>
+</figcaption>
+</figure>
+</center>
+<p>When the MMU is configured to route address lookups over a single-tier
+section profile, the upper 12 bits of the incoming virtual address
+(VA[31:20]) are combined with the upper 18 bits of the Translation
+Table Base Register (TTBRx[31:14]) to construct the upper 30 bits of
+the physical address targeting the level-1 descriptor entry (L1A).
+Within this calculated pointer address, VA[31:20] aligns with bits
+L1A[13:2], the upper 18 bits derived from the tracking register fill
+bits L1A[31:14], and the trailing bits are cleared to L1A[1:0] = 00.
+This geometric alignment ensures that every possible virtual address
+path cleanly addresses a specific 32-bit (4-byte) descriptor slot within
+the page table array.</p>
+<p>The hardware interfaces directly with memory using this composite index
+address L1A[31:0] to poll the level-1 page table, fetching the 32-bit
+descriptor word L1O[31:0]. The upper 12 bits extracted from this
+descriptor (L1O[31:20]) are then concatenated with the lower 20 bits
+of the original virtual address (VA[19:0]) to form the definitive
+physical address (PA[31:0]) of the memory cell. Concurrently, the
+lower bits (L1O[19:0]) are parsed by the memory controller to enforce
+the localized attributes and access barriers assigned to that segment.</p>
+<p>If the translation resolution is scaled down to map small pages or large
+pages, necessitating a finer subdivision of the virtual address space,
+the platform engages a two-tier translation cascade. This multi-stage
+translation pipeline is organized as illustrated in the schematic below:</p>
+<center>
+<figure>
+<img src="./media/image57.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-10 Virtual-to-Physical Address Translation Pipeline via 4 KB
+Page Descriptors</p>
+</figcaption>
+</figure>
+</center>
+<p>Initially, the high-order bits VA[31:20] of the incoming virtual
+address are combined with the register configurations inside
+TTBRx[31:14] to isolate the target bit array L1A[31:2], clearing the
+lower bits to 00 to format a valid level-1 look-up pointer L1A. The MMU
+issues a physical memory access transaction using L1A to retrieve the
+level-1 page table descriptor payload L1O[31:0].</p>
+<p>Instead of addressing raw physical memory, the upper bits of this
+descriptor (L1O[31:10]) are combined with the middle bits of the
+original virtual address (VA[19:12]) to construct the address segment
+L2A[31:2]. The lower bounds are zeroed out to L2A[1:0] = 00 to form
+the definitive address pointing to a specific level-2 page table
+descriptor slot. The MMU polls this level-2 table to extract the final
+descriptor word L2O[31:0].</p>
+<p>At the terminal execution step, the definitive physical address is
+assembled by mapping the upper 20 bits directly from the level-2
+descriptor (PA[31:12] = L2O[31:12]) and copying the remaining
+low-order bits straight from the original virtual address offset
+(PA[11:0] = VA[11:0]), concluding the two-tier virtual-to-physical
+address translation loop.</p>
+<p>In practice, the system hardware does not perform a slow physical table
+walk across memory for every single memory instruction. The ARM
+microarchitecture incorporates a specialized hardware cache known as the
+Translation Lookaside Buffer (TLB). Before initiating an automated page
+table walk over physical RAM, the MMU's internal lookup engines
+interrogate the TLB to check if an active virtual-to-physical address
+translation pair (VA -&gt; PA) is already cached. If a valid entry matches
+the query, the MMU immediately uses the cached physical address to speed
+up execution. If a cache miss occurs, the hardware falls back to run the
+complete multi-stage page table walk detailed above.</p>
+<h3 id="633-linux-initial-page-tables"><a class="header" href="#633-linux-initial-page-tables">6.3.3 Linux Initial Page Tables</a></h3>
+<p>During the address translation process, the Linux kernel employs a
+multi-tiered translation cascade consisting of five discrete page table
+layers: PGD, P4D, PUD, PMD, and PTE. The PGD (Page Global Directory)
+serves as the top-level page table responsible for managing the entire
+virtual address space allocation.</p>
+<p>The subsequent intermediate layers—encompassing the P4D (Page 4th
+Level Directory), PUD (Page Upper Directory), and PMD (Page Middle
+Directory)—are leveraged to implement multi-stage mid-level address
+translation loops. Among these, the PMD functions as the immediate
+parent page table routing down to the PTE layer, providing the tracking
+vectors required to resolve the base addresses of individual PTE pools.
+Finally, the PTE (Page Table Entry) layer acts as the definitive,
+lowest-tier level within the translation hierarchy; the Linux memory
+management engine interrogates the individual entries within the PTE to
+retrieve the final physical address matching the requested virtual
+address block.</p>
+<p>The structural relationship and structural hierarchy linking these
+multiple page table layers are mapped out in the schematic diagram
+below:</p>
+<center>
+<figure>
+<img src="./media/image58.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-11 Linux Multi-tier Page Table Hierarchy</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="634-implementing-nominal-three-tier-linux-address-translation-via-arm-hardware"><a class="header" href="#634-implementing-nominal-three-tier-linux-address-translation-via-arm-hardware">6.3.4 Implementing Nominal Three-tier Linux Address Translation via ARM Hardware</a></h3>
+<p>The ARM implementation of the Linux kernel utilizes a nominal three-tier
+address translation model consisting of the PGD, PMD, and PTE. The
+top-level PGD maps directly to the ARM hardware Translation Table Base
+Registers, TTBR0 and TTBR1, which provide the reference tracking vectors
+to locate the mid-level PMD tables.</p>
+<p>When executing on 32-bit ARM hardware that natively supports only two
+levels of hardware translation, a structural mismatch arises with
+Linux's three-tier software model. To resolve this, the kernel
+implements a 1:1 structural shorthand overlay linking the PGD entries
+directly to the PMD entries. By assigning identical bit vectors to both
+descriptor layers, the Linux kernel leverages the 2-tier MMU hardware
+pipeline to execute its nominal 3-tier software mapping. In the
+low-level architecture code, this folded translation loop is managed by
+completely merging the P4D, PUD, and PMD layers so they reference an
+identical physical base context. The schematic diagram below illustrates
+this architectural adaptation:</p>
+<center>
+<figure>
+<img src="./media/image59.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-12 Schematic Mapping of Linux Folding to a 2-Tier ARM MMU Pipeline</p>
+</figcaption>
+</figure>
+</center>
+<p>Within the Linux memory management framework, the PMD specifies the
+formatting constraints for all page table tiers above the PTE, making it
+structurally equivalent to an ARM level-1 section or supersection
+descriptor. Concurrently, the PTE maps out the absolute primitive
+boundaries of individual page descriptors, functioning as an ARM level-2
+page descriptor.</p>
+<p>Executing address translations over 1 MB block sections requires only a
+single-tier lookup phase. Because the early bootstrap lifecycle does not
+enforce maximum, fine-grained memory utilization, the early kernel
+simplifies its memory model by processing section descriptors
+exclusively during the initial booting sequence. Consequently, the
+temporary page tables are populated using standard 1 MB section
+structures. The low-level assembly sequence tasked with initializing
+these early section-level structures within the head.S source code
+module is declared under the global label __create_page_tables:</p>
+<pre><code>__create_page_tables:
+        pgtbl    r4, r8                	@ page table address
+        mov    r0, r4
+        mov    r3, #0
+        add    r6, r0, #PG_DIR_SIZE
+1:    str    r3, [r0], #4
+        str    r3, [r0], #4
+        str    r3, [r0], #4
+        str    r3, [r0], #4
+        teq    r0, r6
+        bne    1b
+        /* ... Note: For clarity, the core loop is shown fully in the text above ... */
+        ret    lr
+ENDPROC(__create_page_tables)
+    .ltorg
+    .align
+__turn_mmu_on_loc:
+    .long    .
+    .long    __turn_mmu_on
+    .long    __turn_mmu_on_end
+</code></pre>
+<p>Prior to branching into this assembly block, register r8 must contain
+the baseline physical memory offset vector (PHYS_OFFSET), r9 preserves
+the hardware CPU ID signature, and r10 references the memory workspace
+hosting the resolved processor metadata record.</p>
+<p>The initial macro command pgtbl r4, r8 calculates the hardware absolute
+physical memory boundary tracking to PHYS_OFFSET + TEXT_OFFSET -
+PG_DIR_SIZE, caching the resulting base reference inside register r4. As
+analyzed in Figure 6-5, this coordinate defines the absolute starting
+address of the transient page table structure.</p>
+<p>Immediately following this base registration loop, the system steps into the zero-fill segment:</p>
+<pre><code>mov    r0, r4
+        mov    r3, #0
+        add    r6, r0, #PG_DIR_SIZE
+1:    str    r3, [r0], #4
+        str    r3, [r0], #4
+        str    r3, [r0], #4
+        str    r3, [r0], #4
+        teq    r0, r6
+        bne    1b
+</code></pre>
+<p>This assembly loop iterates across the entire memory layout allocated to
+PG_DIR_SIZE, writing null bytes (0x00000000) throughout the table to
+clear out stale artifacts.</p>
+<p>A fundamental challenge arises during MMU bring-up: an identical virtual
+coordinate might address entirely different physical cells before and
+after the MMU is engaged. Crucially, the explicit physical instructions
+tasked with executing the MMU activation sequence must remain strictly
+identity-mapped, meaning their virtual address must align perfectly with
+their true physical address during the instruction pipelining phase. If
+an address drift occurs during this structural step, the processor's
+fetch engine will jump to an unmapped sector, leading to an immediate
+system crash. To prevent this, the initialization code constructs
+explicit identity-mapped descriptor entries covering the code block that
+toggles the MMU. This is achieved by storing the upper 12 bits of the
+code section's physical base address directly into the corresponding section descriptor base domain.</p>
+<pre><code>        adr    r0, __turn_mmu_on_loc
+        ldmia    r0, {r3, r5, r6}
+        sub    r0, r0, r3                    @ virt-&gt;phys offset
+        add    r5, r5, r0                    @ phys __turn_mmu_on
+        add    r6, r6, r0                    @ phys __turn_mmu_on_end
+        mov    r5, r5, lsr #SECTION_SHIFT
+        mov    r6, r6, lsr #SECTION_SHIFT
+1:    orr    r3, r7, r5, lsl #SECTION_SHIFT    	@ flags + kernel base
+        str    r3, [r4, r5, lsl #PMD_ORDER]        @ identity mapping
+        cmp    r5, r6
+        addlo    r5, r5, #1                    		@ next section
+        blo    1b
+.align
+__turn_mmu_on_loc:
+        .long    .
+        .long    __turn_mmu_on
+        .long    __turn_mmu_on_end
+</code></pre>
+<p>The code sequence shown above establishes a 1:1 identity mapping in the
+page tables for the memory region spanning from __turn_mmu_on to
+__turn_mmu_on_end. When using these specific descriptor entries for
+address translation, the input virtual address resolves to an identical
+output physical address. The technical mechanics of this assembly
+sequence are detailed below.</p>
+<p>The instruction adr r0, __turn_mmu_on_loc calculates the physical
+address of the __turn_mmu_on_loc label. The command ldmia r0, {r3, r5,
+r6} loads the virtual linking addresses (address offsets) corresponding
+to . (the __turn_mmu_on_loc label itself), __turn_mmu_on, and
+__turn_mmu_on_end into registers r3, r5, and r6 respectively. The
+arithmetic instruction sub r0, r0, r3 calculates the physical-to-virtual
+translation delta (PHYS_OFFSET - PAGE_OFFSET). The subsequent addition
+instructions:</p>
+<pre><code>add r5, r5, r0
+add r6, r6, r0
+</code></pre>
+<p>compute the absolute physical addresses of __turn_mmu_on and
+__turn_mmu_on_end. The logical shift commands:</p>
+<pre><code>mov r5, r5, lsr #SECTION_SHIFT
+mov r6, r6, lsr #SECTION_SHIFT
+</code></pre>
+<p>isolate the section base fields from these addresses by stripping away
+the lower order bits.</p>
+<p>To maximize code portability, the ARM kernel tree shares a unified
+codebase between processors supporting a 40-bit large physical address
+space and those limited to a legacy 32-bit space. When executing a
+2-tier hardware translation, SECTION_SHIFT is configured to 20.
+Conversely, under a 3-tier translation scheme, SECTION_SHIFT scales to</p>
+<ol>
+<li>Because the kernel operates under a short-descriptor 2-tier profile
+during this early bootstrap phase, SECTION_SHIFT evaluates strictly to</li>
+<li></li>
+</ol>
+<p>The core programming instructions:</p>
+<pre><code>orr r3, r7, r5, lsl #SECTION_SHIFT
+str r3, [r4, r5, lsl #PMD_ORDER]
+</code></pre>
+<p>combine the section base address with the memory attribute flag bits
+passed in r7 to form a valid level-1 section descriptor entry. It then
+commits this descriptor word to the active page table structure pointed
+to by r4. Because each short-descriptor entry consumes exactly 32 bits
+(4 bytes) of storage, the scaling shift constant PMD_ORDER is fixed to 2
+(since (1 \ll 2 = 4)). The execution workflow tracking this routine
+is illustrated below:</p>
+<center>
+<figure>
+<img src="./media/image60.png" style="width:60%;height:auto" />
+<figcaption>
+<p>Figure 6-13 Page Table Initialization Pipeline</p>
+</figcaption>
+</figure>
+</center>
+<p>Having completed the identity mapping vectors, the subsequent code block
+constructs the page table descriptors for the main kernel image space
+extending from PAGE_OFFSET up to the end of the BSS segment (_end). The
+underlying allocation methodology mirrors the identity-mapping routine,
+with the exception that it maps virtual addresses down to distinct
+physical targets instead of enforcing a 1:1 match. The code segment
+managing this mapping is structured as follows:</p>
+<pre><code>        add    r0, r4, #PAGE_OFFSET &gt;&gt; (SECTION_SHIFT - PMD_ORDER)
+        ldr    r6, =(_end - 1)
+        orr    r3, r8, r7
+        add    r6, r4, r6, lsr #(SECTION_SHIFT - PMD_ORDER) 
+1:    str    r3, [r0], #1 &lt;&lt; PMD_ORDER
+        add    r3, r3, #1 &lt;&lt; SECTION_SHIFT
+        cmp    r0, r6
+        bls    1b
+</code></pre>
+<p>Prior to executing this block, register r4 references the baseline
+address of the early page table array, r7 encapsulates the low-level
+memory attribute flags, and r8 holds PHYS_OFFSET. The initial line of
+assembly computes the exact descriptor entry index within the page table
+that maps to the base virtual address PAGE_OFFSET. Because each
+descriptor slot consumes a 4-byte width, PAGE_OFFSET must be shifted
+right by 18 bits instead of 20 bits (20 - 2 = 18).</p>
+<p>The logic operation orr r3, r8, r7 builds the raw section descriptor
+content. This operation requires that the lower 20 bits of PHYS_OFFSET
+are strictly zero-initialized—a hardware boundary constraint that is
+universally satisfied across ARM platforms. As shown in the code logic,
+register r6 resolves to the absolute page table entry index
+corresponding to the virtual address limit _end.</p>
+<p>The instruction str r3, [r0], #1 &lt;&lt; PMD_ORDER writes the generated
+descriptor word into the page table slot indexed by r0 and automatically
+increments r0 by 4 bytes to point to the next contiguous descriptor
+entry. Concurrently, add r3, r3, #1 &lt;&lt; SECTION_SHIFT increments the
+section base domain within the descriptor word by 1 MB, aligning it with
+the next contiguous physical memory block. The structural software loop
+tracking this mapping is charted in the flowchart below:</p>
+<center>
+<figure>
+<img src="./media/image61.png" style="width:80%;height:auto" />
+<figcaption>
+<p>Figure 6-14 Page Table Configuration for the Kernel and BSS Segments</p>
+</figcaption>
+</figure>
+</center>
+During the U-BOOT platform boot phase, beyond importing the primary
+executable Linux kernel binary into physical RAM, the bootloader also
+copies the Device Tree Blob (DTB) or legacy boot parameter arrays
+(atags) into memory. Because the kernel must access these configuration
+structures continuously throughout its operational lifecycle, it must
+map this specific memory footprint inside the early page tables. After
+unpacking the DTB or parameters into memory, U-BOOT caches the absolute
+starting physical address of this storage region inside register r2.
+<p>Although the actual linear width of this parameter block typically
+consumes less than a single 1 MB section boundary, its physical
+placement on the media may sit dangerously close to a section edge. If
+the memory block overlaps a section boundary and spans into an adjacent
+section, mapping it safely requires two consecutive section descriptors.
+The assembly block responsible for generating the page table entries for
+this parameter region is structured as follows:</p>
+<pre><code>mov    r0, r2, lsr #SECTION_SHIFT
+        movs    r0, r0, lsl #SECTION_SHIFT
+        subne    r3, r0, r8
+        addne    r3, r3, #PAGE_OFFSET
+        addne    r3, r4, r3, lsr #(SECTION_SHIFT - PMD_ORDER)
+        orrne    r6, r7, r0
+        strne    r6, [r3], #1 &lt;&lt; PMD_ORDER
+        addne    r6, r6, #1 &lt;&lt; SECTION_SHIFT
+        strne    r6, [r3]
+        ret    lr
+</code></pre>
+<p>The initial bitmask operations:</p>
+<pre><code>mov r0, r2, lsr #SECTION_SHIFT
+movs r0, r0, lsl #SECTION_SHIFT
+</code></pre>
+<p>isolate the 1 MB section base address fields (bits[31:20]) hosting the
+Device Tree or parameter block. The conditional execution block:</p>
+<pre><code>subne r3, r0, r8
+addne r3, r3, #PAGE_OFFSET
+</code></pre>
+<p>computes the corresponding virtual address of this region by applying
+the transformation matrix (phys_addr - PHYS_OFFSET + PAGE_OFFSET). The
+subsequent line:</p>
+<p><code>addne r3, r4, r3, lsr #(SECTION_SHIFT - PMD_ORDER)</code></p>
+<p>calculates the target index offset within the page table matching that
+virtual address.</p>
+<p>The bitwise instruction orrne r6, r7, r0 constructs the section
+descriptor word mapping the parameter block. Finally, the trailing two
+store operations commit these two sequential descriptor words into the
+calculated page table offsets to ensure complete boundary coverage, then
+branch back to the calling function.</p>
+<p>The comprehensive spatial relationship mapping the physical address
+blocks to their respective virtual spaces after processing this early
+page table generation phase is illustrated in the diagram below:</p>
+<center>
+<figure>
+<img src="./media/image62.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 6-15 Virtual-to-Physical Address Layout Mappings Established via
+the Early Page Tables</p>
+</figcaption>
+</figure>
+</center>
+This concludes Section 6.3 and the detailed technical analysis of the
+early page table initialization phase.
+<h3 id="635-enabling-the-memory-management-unit-mmu"><a class="header" href="#635-enabling-the-memory-management-unit-mmu">6.3.5 Enabling the Memory Management Unit (MMU)</a></h3>
+<p>Following the initialization of the early translation page tables, the
+next step in the boot sequence is provisioning the CPU to engage the MMU
+safely. The assembly logic first loads the post-MMU execution target
+address __mmap_switched into register r13 (which functions as the
+primary Stack Pointer, sp), and writes the absolute physical return
+vector address (label 1:) into the Link Register (lr).</p>
+<p>The following assembly sequence implements the MMU preparation pipeline
+for platforms supporting a standard 32-bit physical address space. Prior
+to entering this code segment, register r4 preserves the early page
+table base reference, and r10 targets the absolute physical address of
+the resolved proc_info_list matching the active ARM processor core
+model:</p>
+<pre><code>        ldr    r13, =__mmap_switched
+        badr    lr, 1f
+        mov    r8, r4
+        ldr    r12, [r10, #PROCINFO_INITFUNC]
+        add    r12, r12, r10
+        ret    r12
+1:    b    __enable_mmu
+</code></pre>
+<p>The operation ldr r13, =__mmap_switched writes the virtual linking
+address of the __mmap_switched routine into register r13. The command
+badr lr, 1f calculates and stores the physical address of the fallback
+label 1: into lr as the baseline return address vector. The command mov
+r8, r4 copies the page table base address into register r8.</p>
+<p>The instruction ldr r12, [r10, #PROCINFO_INITFUNC] resolves the
+explicit relative byte offset of the core processor initialization block
+(__cpu_flush) relative to the proc_info_list base address. The command
+add r12, r12, r10 computes the absolute physical execution address of
+this __cpu_flush routine, writing the vector into register r12.
+Finally, ret r12 fires an unconditional branch to jump straight into the
+processor-specific setup subroutine.</p>
+<p>For ARMv7 Cortex-A9 MPCore application processors, this setup routine is
+defined as the core symbol __v7_ca9mp_setup within the low-level
+memory management architecture source module git/arch/arm/mm/proc-v7.S.
+The assembly code block is structured as follows:</p>
+<pre><code>__v7_ca9mp_setup:
+        mov    r10, #(1 &lt;&lt; 0)                	@ Cache/TLB ops broadcasting
+        adr    r0, __v7_setup_stack_ptr
+        ldr    r12, [r0]
+        add    r12, r12, r0                    	@ Calculate local stack pointer
+        stmia    r12, {r1-r6, lr}                	@ Save r1-r6 and lr to __v7_setup_stack
+        bl      v7_invalidate_l1
+        ldmia    r12, {r1-r6, lr}
+        b    __v7_setup_cont
+</code></pre>
+<p>The technical objective of this routine is to back up the contents of
+registers r1 through r6 and the lr vector by pushing them into a
+temporary local stack allocation frame named __v7_setup_stack. It then
+calls v7_invalidate_l1 to completely purge and invalidate all stale
+entries within the level-1 data cache hierarchy. Upon restoring the
+original values of registers r1–r6 and lr from the temporary stack, the
+state machine branches to __v7_setup_cont to provision the hardware
+Translation Table Base Control Register (TTBCR) and the Translation
+Table Base Registers (TTBR0/TTBR1).</p>
+<p>The following assembly-level subroutine implements the absolute level-1
+data cache invalidation loop. This routine interrogates the CP15
+coprocessor configuration registers to read the explicit number of sets
+and cache ways implemented by the silicon, and subsequently loops across
+every cache line to execute hardware-enforced invalidate steps by
+writing to the CP15 c7 register:</p>
+<pre><code>ENTRY(v7_invalidate_l1)
+          mov     r0, #0
+          mcr     p15, 2, r0, c0, c0, 0            	@ Write CSSELR (Cache Size Selection Register) to target L1 Data Cache
+          mrc     p15, 1, r0, c0, c0, 0            	@ Read CCSIDR (Cache Size ID Register) metrics
+          movw    r1, #0x7fff
+          and     r2, r1, r0, lsr #13                	@ Extract total sets parameter (Assigned value = actual sets - 1)
+          movw    r1, #0x3ff
+          and     r3, r1, r0, lsr #3                  	@ Extract total ways parameter (Assigned value = actual ways - 1)
+          add     r2, r2, #1                              	@ Calculate absolute number of sets
+          and     r0, r0, #0x7                    	@ Extract cache line word width (Actual = log2(words) - 2)
+          add     r0, r0, #4                      	@ Define set shift value for DCISW formatting
+          clz     r1, r3                              	@ Calculate way shift value based on leading zeros of ways bitmask
+          add     r4, r3, #1                      	@ NumWays total constant
+1:        sub     r2, r2, #1                      	@ Decrement NumSets loop counter
+          mov     r3, r4                            	@ Reset Temp counter back to NumWays
+2:        subs    r3, r3, #1                      	@ Decrement Temp way index counter
+          mov     r5, r3, lsl r1
+          mov     r6, r2, lsl r0
+          orr     r5, r5, r6                          	@ Synthesize final formatted DCISW command register value
+          mcr     p15, 0, r5, c7, c6, 2           	@ Write DCISW (Data Cache Invalidate by Set/Way) to invalidate cache line
+          bgt     2b                        		@ Loop until all associative ways within the active set are invalidated
+          cmp     r2, #0
+          bgt     1b                        		@ Loop until all sets across the L1 cache controller are invalidated
+          dsb     st
+          isb
+          ret     lr
+ENDPROC(v7_invalidate_l1)
+</code></pre>
+<p>The logical execution workflow and register decrement tracking loop
+implemented across the v7_invalidate_l1 assembly subroutine is
+visualized in the schematic flowchart below:</p>
+<center>
+<figure>
+<img src="./media/image63.png" style="width:80%;height:auto" />
+<figcaption>
+<p>Figure 6-16 Hardware Level-1 Data Cache Invalidation Loop</p>
+</figcaption>
+</figure>
+</center>
+<p>Upon returning from the invalidation path, the processor branches into
+__v7_setup_cont to proceed with secondary low-level register updates.
+The __v7_setup_cont code path is architected to optionally apply
+silicon errata workarounds and hardware bug patches. Since NXP
+applications processors do not utilize these specific errata
+workarounds, this software segment has been omitted for clarity.</p>
+<p>Following these conditional checks, the routine clears out stale
+instruction pipelines and pre-fetch buffers by writing zero values into
+the CP15 coprocessor c7 and c8 registers, which completely flushes the
+Instruction Cache (I-Cache) and invalidates the Translation Lookaside
+Buffers (TLBs).</p>
+<p>The routine then invokes the system macro v7_ttb_setup r10, r4, r5, r8,
+r3 to program the Translation Table Base Control Register (TTBCR)
+layout, and writes the early page table physical base address preserved
+in r8 straight into the primary hardware page table register TTBR1.
+Finally, it programs the primary memory region attribute and normal
+memory re-mapping registers (PRRR and NMRR) within the CP15
+configuration block. For granular details tracking the bit definitions
+and access controls of these re-mapping registers, developers can
+reference the official ARM Architecture Reference Manual.</p>
+<pre><code>__v7_setup_cont:
+    mov    r10, #0
+    mcr    p15, 0, r10, c7, c5, 0        	@ Invalidate all instruction caches
+    mcr    p15, 0, r10, c8, c7, 0        	@ Invalidate TLBs
+    v7_ttb_setup r10, r4, r5, r8, r3        	@ Configure TTBCR and TTBRx
+    ldr    r3, =PRRR    
+    ldr    r6, =NMRR    
+    mcr    p15, 0, r3, c10, c2, 0        	@ Configure Primary Region Remap Register
+    mcr    p15, 0, r6, c10, c2, 1        	@ Configure Normal Memory Region Remap Register
+    dsb
+    adr    r3, v7_crval
+    ldmia    r3, {r3, r6}
+    mrc    p15, 0, r0, c1, c0, 0        	@ Read System Control Register (SCTLR)
+    bic    r0, r0, r3
+    orr    r0, r0, r6 
+    ret    lr
+</code></pre>
+<p>The instruction ldmia r3, {r3, r6} loads the explicit bitmask
+configurations 0x0122C302 and 0x30C03C7D into registers r3 and r6
+respectively. Prior to returning to the caller, the target bit values
+destined for the System Control Register (SCTLR) are temporarily
+preserved within register r0.</p>
+<p>Because the Link Register (lr) preserved the physical base address of
+label 1: during the cache invalidation call, returning from the setup
+block automatically executes b __enable_mmu, which shifts the
+execution pipeline into the __enable_mmu subroutine to kick off MMU
+activation. Prior to entering the __enable_mmu code block, the
+hardware register matrix is aligned precisely as follows:</p>
+<ul>
+<li>
+<p>r0: Holds the prepared configuration bitmask to be written to the
+System Control Register (SCTLR).</p>
+</li>
+<li>
+<p>r1: Preserves the machine type identifier code.</p>
+</li>
+<li>
+<p>r2: Stores the absolute physical base pointer address referencing the
+atags or the Device Tree Blob (DTB).</p>
+</li>
+<li>
+<p>r4: Holds the lower 32 bits of the level-1 Translation Table Base
+Register 0 (TTBR0).</p>
+</li>
+<li>
+<p>r5: Holds the upper 32 bits of TTBR0 (processed exclusively within
+40-bit large physical addressing pipelines where TTBR0 and TTBR1 scale
+to 64-bit widths).</p>
+</li>
+<li>
+<p>r8: Holds the structural base value for TTBR1.</p>
+</li>
+<li>
+<p>r9: Preserves the hardware processor ID signature.</p>
+</li>
+<li>
+<p>r13: Stores the absolute virtual destination address targeted for
+execution once the MMU has been successfully engaged.</p>
+</li>
+</ul>
+<p>The low-level assembly sequence tasked with transitioning the CPU into
+virtual memory mode is structured as follows:</p>
+<pre><code>__enable_mmu:
+        bic    r0, r0, #CR_A            	@ Clear alignment fault checking bits in SCTLR configuration
+        mov    r5, #DACR_INIT 
+        mcr    p15, 0, r5, c3, c0, 0        	@ Write Domain Access Control Register (DACR)
+        mcr    p15, 0, r4, c2, c0, 0        	@ Write Translation Table Base Register 0 (TTBR0)
+        b    __turn_mmu_on
+ENDPROC(__enable_mmu)   
+
+.align    5
+.pushsection    .idmap.text, "ax"
+ENTRY(__turn_mmu_on)
+        mov    r0, r0
+        instr_sync
+        mcr    p15, 0, r0, c1, c0, 0        @ Write SCTLR: Enable the Memory Management Unit (MMU)
+        mrc    p15, 0, r3, c0, c0, 0        @ Read Cache Size ID Register (CCSIDR)
+        instr_sync
+        mov    r3, r3
+        mov    r3, r13
+        ret    r3                    	@ Return/Jump to virtual address space inside __mmap_switched
+__turn_mmu_on_end:
+ENDPROC(__turn_mmu_on)
+    .popsection
+
+</code></pre>
+<p>The compiled binary code for the __turn_mmu_on block is mapped
+directly into the .idmap.text section. This section resides strictly
+within the identity-mapped (1:1) translation boundary, meaning the
+virtual and physical address planes are completely identical for this
+execution window. Consequently, instructions fetched within this loop
+proceed smoothly without being disrupted or unmapped when the MMU
+configuration changes.</p>
+<p>The enabling routine itself is direct: it enforces the global memory
+access permission domains inside the DACR, registers the base table
+tracking pointer within TTBR0, and updates the System Control Register
+bits to activate the MMU hardware. The implementation uses the
+Instruction Synchronization Barrier isb macro constant (instr_sync) to
+flush the execution pipeline, guaranteeing that all internal processor
+states align before branching to the virtual domain.</p>
+<p>Once the MMU is fully engaged, the execution pipeline executes the jump
+into virtual space, landing at the __mmap_switched entry vector to run
+the following routine:</p>
+<pre><code>__mmap_switched:
+    mov    r7, r1
+    mov    r8, r2
+    mov    r10, r0
+    adr    r4, __mmap_switched_data
+    mov    fp, #0
+    ldmia    r4!, {r0, r1, sp}
+    sub    r2, r1, r0
+    mov    r1, #0
+    bl    memset            		@ Zero out the uninitialized global data (.bss) segment
+    ldmia    r4, {r0, r1, r2, r3}
+    str    r9, [r0]            		@ Store processor ID parameters
+    str    r7, [r1]            		@ Store hardware machine type index
+    str    r8, [r2]            		@ Store boot parameters pointer or Device Tree base address
+    cmp    r3, #0
+    strne    r10, [r3]            	@ Store System Control Register (SCTLR) value
+    mov    lr, #0
+    b    start_kernel   
+.align    2
+.type    __mmap_switched_data, %object
+__mmap_switched_data:
+    .long    __bss_start                		@ Read into r0
+    .long    __bss_stop                		@ Read into r1
+    .long    . + THREAD_START_SP     	@ Read into Stack Pointer (sp)
+
+    .long    processor_id                		@ Read into r0
+    .long    __machine_arch_type        		@ Read into r1
+    .long    __atags_pointer            		@ Read into r2
+    .long    cr_alignment               		@ Read into r3
+    .size    __mmap_switched_data, . - __mmap_switched_data
+</code></pre>
+<p>The fundamental purpose of the __mmap_switched routine is to clear the
+uninitialized global variable region bounded between the __bss_start
+and __bss_stop markers by filling the blocks with null bytes via
+memset. Following this runtime cleanup, it commits the runtime hardware
+processor ID, the machine architecture index, the absolute memory
+pointer referencing the Device Tree blob, and the active System Control
+Register state into their respective global kernel variables
+(processor_id, __machine_arch_type, __atags_pointer, and
+cr_alignment).</p>
+<p>Having successfully finalized the execution stacks and established a
+valid C environment within the virtual memory domain, it clears the link
+register and invokes an unconditional branch to jump directly into the
+architecture-independent C language initialization routine:
+start_kernel().</p>
+<p>This concludes Section 6.3.5 and the complete technical translation of
+the low-level assembly bootstrap phase.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="6.2 Modifying the Address Translation Routines.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="chapter_7.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="6.2 Modifying the Address Translation Routines.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="chapter_7.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

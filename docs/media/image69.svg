@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="150mm" height="70mm" viewBox="0 0 15000 7000" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" stroke-width="28.222" stroke-linejoin="round" xml:space="preserve">
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 1000,1000 L 3700,1000 "/>
+ <path fill="rgb(0,0,0)" stroke="none" d="M 3700,850 L 4000,1000 3700,1150 3700,850 Z "/>
+ <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="250" y="1099"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="532" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">PGD</tspan></tspan></tspan></text>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 6000,7000 L 4000,7000 4000,1000 8000,1000 8000,7000 6000,7000 Z "/>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 4000,2000 L 8000,2000 "/>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 4000,6000 L 8000,6000 "/>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 8000,1500 L 10700,1500 "/>
+ <path fill="rgb(0,0,0)" stroke="none" d="M 10700,1350 L 11000,1500 10700,1650 10700,1350 Z "/>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 13000,7000 L 11000,7000 11000,1000 15000,1000 15000,7000 13000,7000 Z "/>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 11000,2000 L 15000,2000 "/>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 11000,6000 L 15000,6000 "/>
+ <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="5941" y="3817"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="85" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">•</tspan></tspan></tspan><tspan class="TextParagraph"><tspan class="TextPosition" x="5941" y="4092"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="85" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">•</tspan></tspan></tspan><tspan class="TextParagraph"><tspan class="TextPosition" x="5941" y="4367"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="85" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">•</tspan></tspan></tspan></text>
+ <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="5590" y="1600"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="818" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">PMD[0]</tspan></tspan></tspan></text>
+ <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="5386" y="6587"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="1228" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">PMD[2047]</tspan></tspan></tspan></text>
+ <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="5734" y="587"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="532" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">PGD</tspan></tspan></tspan></text>
+ <text class="SVGTextShape"><tspan class="TextParagraph"><tspan class="TextPosition" x="12727" y="587"><tspan font-family="Liberation Sans, sans-serif" font-size="246px" font-weight="400" lengthAdjust="spacingAndGlyphs" textLength="545" fill="rgb(0,0,0)" stroke="none" style="white-space: pre">PMD</tspan></tspan></tspan></text>
+ <path fill="none" stroke="rgb(0,0,0)" stroke-linejoin="round" d="M 8000,6500 L 10700,6500 "/>
+ <path fill="rgb(0,0,0)" stroke="none" d="M 10700,6350 L 11000,6500 10700,6650 10700,6350 Z "/>
+</svg>

@@ -1,0 +1,1194 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Booting the Linux Kernel - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/5.6 Booting the Linux Kernel.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="56-booting-the-linux-kernel"><a class="header" href="#56-booting-the-linux-kernel">5.6 Booting the Linux Kernel</a></h2>
+<p>The actual launch of the Linux kernel is orchestrated by commands such
+as bootm, bootd, bootefi, bootelf, bootz, bootvx, bootp, nfs, rarpboot,
+and tftpboot. Among these, bootm is used to boot application images from
+memory, bootd handles the default boot sequence, bootefi boots
+EFI-format image applications from memory, bootelf boots ELF-format
+image applications from memory, bootz boots images formatted as a
+zImage, and bootvx boots the VxWorks operating system, while the
+remaining commands are dedicated to booting Linux via network pathways.
+As seen in the bootcmd script, before the bootm command executes, U-BOOT
+first loads the Flattened Device Tree (DTB) blob and the secure TEE
+firmware file into memory. The following sections evaluate the process
+of U-BOOT booting Linux from an SD card, using the bootm command as a
+primary reference model.</p>
+<p>For U-BOOT to successfully boot the Linux kernel, it must understand the
+specific storage and packaging format of the kernel on the storage
+medium. Prior to analyzing the execution path of the do_bootm function,
+the underlying kernel image file formats supported by Linux are detailed
+below.</p>
+<h3 id="561-linux-image-file-formats"><a class="header" href="#561-linux-image-file-formats">5.6.1 Linux Image File Formats</a></h3>
+<p>When discussing Linux kernel formats, terms such as vmlinux, vmlinuz,
+zImage, bzImage, uImage, and FIT are frequently encountered. The vmlinux
+format is a statically linked executable ELF file of the kernel; it is a
+raw binary payload that can be loaded into memory and run directly,
+predominantly utilized for kernel troubleshooting and debugging. The
+vmlinuz format is a compressed version of vmlinux, which becomes
+runnable immediately upon decompression. U-BOOT does not directly
+consume raw vmlinux or standard desktop vmlinuz files.</p>
+<p>The zImage and uImage formats represent the legacy image infrastructure,
+which remains heavily deployed in embedded U-BOOT pipelines. A zImage is
+a self-decompressing kernel container enclosing a specific magic number
+header, a lightweight decompression wrapper routine, and the compressed
+raw vmlinux payload. The binary structural layout of a standard zImage
+file is organized as follows:</p>
+<center>
+<figure>
+<img src="./media/image31.png" style="width:60%;height:auto" />
+<figcaption>
+<p>Figure 5-13 zImage File Format</p>
+</figcaption>
+</figure>
+</center>
+<p>Within this topology, the executable code block (code) occupies the
+first 36 bytes of memory, followed immediately by a 4-byte Magic Number
+used by boot loaders to validate the payload as a definitive zImage. For
+the ARM Linux architecture, this magic signature is fixed to 0x016F2818.
+The zi_start marker denotes the absolute beginning address of the nested
+zImage executable logic, and zi_end points to its absolute termination
+boundary.</p>
+<p>1. Single-Image uImage File Format</p>
+<p>A uImage file is generated by wrapping a standard zImage container with
+a specialized U-BOOT header using the companion mkimage host utility.
+The uImage acts as an entry-ready kernel file that U-BOOT can parse and
+execute directly from memory. Its structural binary layout is structured
+as follows:</p>
+<center>
+<figure>
+<img src="./media/image32.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-14 uImage File Format</p>
+</figcaption>
+</figure>
+</center>
+<p>The 64-byte structural file header encapsulates the magic number, file
+header CRC checksum, file creation timestamp, image payload size,
+destination memory load address, application execution entry point, data
+(the inner zImage) CRC checksum, target operating system identifier,
+target CPU architecture token, image wrapper type, compression method
+flag, and the image name string.</p>
+<ul>
+<li>
+<p>Magic Number: A constant signature fixed to 0x27051956, which software
+routines evaluate to distinguish a legacy uImage file container from
+modern flattened image trees (FIT).</p>
+</li>
+<li>
+<p>Header CRC Checksum: A Cyclic Redundancy Check validation word
+protecting the integrity of the 64-byte header block.</p>
+</li>
+<li>
+<p>Creation Time: A standard Unix epoch timestamp registering the exact
+moment the image file was packed.</p>
+</li>
+<li>
+<p>Image Size: Encodes the exact linear volume of the embedded zImage
+payload in bytes.</p>
+</li>
+<li>
+<p>Load Address: Defines the baseline physical target address in RAM
+where the kernel payload must be uncompressed and relocated.</p>
+</li>
+<li>
+<p>Entry Point: Explicitly marks the absolute address of the first
+machine instruction executed to initiate the kernel boot.</p>
+</li>
+<li>
+<p>Data CRC Checksum: A Cyclic Redundancy Check validation word
+protecting the integrity of the inner zImage binary payload.</p>
+</li>
+<li>
+<p>Operating System ID: An architecture token identifying the target
+operating system environment, such as Linux, VxWorks, NetBSD, or
+FreeBSD. Contemporary versions of U-BOOT provide native support for 28
+distinct operating systems and firmware targets.</p>
+</li>
+<li>
+<p>CPU Type: An architecture token mapping the compiled payload to its
+designated silicon target. U-BOOT currently identifies 26 discrete
+processor configurations including ARM, PowerPC (PPC), and x86
+architectures.</p>
+</li>
+<li>
+<p>Image Type: Maps the payload to one of 40 functional software
+categories, including standalone, kernel, firmware, tee, script,
+ramdisk, or multi.</p>
+</li>
+<li>
+<p>Compression Type: Registers the algorithm utilized to compress the
+underlying zImage, with native support covering uncompressed raw
+blocks, gzip, bzip2, lzma, lzo, and lz4 compression variants.</p>
+</li>
+<li>
+<p>Image Name: A descriptive text string identifying the image, capped at
+a maximum length of 32 characters including the null terminator.</p>
+</li>
+</ul>
+<p>2. Multi-Image uImage File Format</p>
+<p>When the embedded image type field is initialized to configuration value
+05 (multi), the legacy uImage container is refactored to wrap multiple
+independent sub-images within a single contiguous file block. The
+multi-image payload architecture presented in the diagram below
+encapsulates a compiled kernel binary, a compressed root RAMDISK
+container, and the platform Device Tree Blob (DTB) payload:</p>
+<center>
+<figure>
+<img src="./media/image33.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-15 Multi-Image Program File Structure</p>
+</figcaption>
+</figure>
+</center>
+<p>3. Flattened Image Tree (FIT) Image Structure</p>
+<p>FIT is an acronym for Flattened Image Tree. Sharing the identical
+architectural design as the standard Device Tree, a FIT program image
+file is generated from a hierarchical, tree-structured source document
+describing the component images. This tree-structured file is authored
+using the same text-based language syntax as the Device Tree, where
+configuration blocks within the tree define how each component of the
+consolidated image file should be utilized. The file describing this
+image tree structure uses the .its extension suffix and strictly opens
+with the /dts-v1/; token declaration.</p>
+<p>The hierarchical tree topology is composed of structured nodes, anchored
+at the top by a mandatory root node represented as a forward slash (/).
+The root node encapsulates individual image descriptors (images) and
+configuration sets (configurations), alongside the global description
+and #address-cells properties. The description property supplies a text
+summary explaining the image container, while #address-cells specifies
+the exact number of 32-bit cells required to encode node addresses
+within this context. U-BOOT parses these node addresses to cross-access
+and extract nested content from the flattened image blob. Both the
+images container and the configurations container can host multiple
+distinct child nodes, which are accessed via their defined addresses or
+unit tags.</p>
+<p>The individual child nodes nested inside the images block can
+encapsulate legacy uImage files, compiled Flattened Device Tree blobs
+(.dtb), or compressed RAM disk images. Each independent child node block
+supports the description, data, type, arch, os, compression, load,
+entry, and hash attributes:</p>
+<ul>
+<li>
+<p>description: A descriptive text summary identifying the specific
+sub-image component.</p>
+</li>
+<li>
+<p>data: Specifies the source binary payload to include, typically
+injected using the raw binary inclusion operator (/incbin/).</p>
+</li>
+<li>
+<p>type: Registers the functional category of the binary payload (e.g.,
+kernel, flat_dt, ramdisk).</p>
+</li>
+<li>
+<p>arch: Identifies the target instruction set architecture compatible
+with the payload (e.g., arm, x86, riscv).</p>
+</li>
+<li>
+<p>os: Specifies the guest operating system type to initialize.</p>
+</li>
+<li>
+<p>compression: Registers the compression algorithm used to compress the
+target binary sequence.</p>
+</li>
+<li>
+<p>load: Defines the absolute target address in physical RAM where the
+binary payload must be unpacked or copied.</p>
+</li>
+<li>
+<p>entry: Specifies the absolute memory execution vector where control is
+transferred to start the program.</p>
+</li>
+<li>
+<p>hash: Dictates the integrity verification algorithm applied to
+validate the sub-image segment.</p>
+</li>
+</ul>
+<p>The configurations container block can host multiple child configuration
+nodes alongside a top-level default selection attribute to define how
+the different compiled image pieces are joined together at runtime. For
+example, in the reference schema provided below, the default selection
+pointer targets config@1. The configuration matrix under config@1
+specifies that the system must boot using the primary kernel defined
+under the kernel@1 node paired with the Flattened Device Tree blob
+registered under the fdt@1 node:</p>
+<pre><code>/dts-v1/;
+/ {
+	description = "Marcus FIT test";
+	#address-cells = &lt;1&gt;;
+	images {
+		kernel@1 {
+			description = "My default kernel";
+			data = /incbin/("./zImage");
+			type = "kernel";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			load = &lt;0x83800000&gt;;
+			entry = &lt;0x83800000&gt;;
+			hash@1 {
+				algo = "md5";
+			};
+		};
+		kernel@2 {
+			description = "Rescue image";
+			data = /incbin/("./zImage");
+			type = "kernel";
+			arch = "arm";
+			os = "linux";
+			compression = "none";
+			load = &lt;0x83800000&gt;;
+			entry = &lt;0x83800000&gt;;
+			hash@1 {
+				algo = "crc32";
+			};
+		};
+		fdt@1 {
+			description = "FDT for my cool board";
+			data = /incbin/("./devicetree.dtb");
+			type = "flat_dt";
+			arch = "arm";
+			compression = "none";
+			hash@1 {
+				algo = "crc32";
+			};
+		};
+	};
+	configurations {
+		default = "config@1";
+		config@1 {
+			description = "Default configuration";
+			kernel = "kernel@1";
+			fdt = "fdt@1";
+		};
+		config@2 {
+			description = "Rescue configuration";
+			kernel = "kernel@2";
+			fdt = "fdt@1";
+		};
+	};
+};
+</code></pre>
+<p>The root node can contain images and configurations child nodes. Within
+contemporary U-BOOT trees, the properties currently supported under the
+images child nodes encompass data, data-position, data-offset,
+data-size, timestamp, description, arch, type, os, compression, entry,
+and load. The data property is predominantly utilized to establish the
+location or reference path of the program code or source binary block.
+Concurrently, a node under the configurations block supports properties
+such as kernel, ramdisk, fdt, loadable, default, setup, fpga, firmware,
+and standalone.</p>
+<p>Furthermore, the FIT specification supports secure cryptographic
+verification layers through dedicated signature and key verification
+nodes, including hash, signature, and key. A key configuration node can
+host attributes such as hash, algo, value, u-boot-ignore, signature,
+required, and key-name-hint. A cipher block node accommodates the cipher
+data pointer and its accompanying algo selection. These cipher and hash
+nodes are nested as child nodes within individual images components to
+enforce hardware-level image authenticity checks and implement encrypted
+high-assurance secure boots.</p>
+<p>U-BOOT cannot directly parse or execute a raw text-based .its file. The
+file must first be flattened into a single operational binary image tree
+blob suffixed with the .itb extension using the host mkimage compilation
+utility. The schematic diagram below illustrates the exact input
+components and compiled output artifact managed during this mkimage
+build step:</p>
+<center>
+<figure>
+<img src="./media/image34.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-16 Generation Process of the ITB File</p>
+</figcaption>
+</figure>
+</center>
+<p>The diagram below shows the core structural design and header alignment
+of the final compiled .itb binary image payload. Mirroring the binary
+layout rules of standard flattened device trees, the hierarchical image
+tree topology uses nesting definitions to append child node name strings
+directly beneath their corresponding parent block structures. Properties
+declared within these child nodes point to specific string tokens and
+tracking lengths packed into a centralized strings block database; the
+parsing engine traverses this string block via numerical offsets to read
+property values. FIT leverages this layout to encapsulate
+multi-component execution trees cleanly. For granular formatting
+guidelines and syntactical specifications, developers can consult the
+official Devicetree Specification documentation.</p>
+<center>
+<figure>
+<img src="./media/image35.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-17 FIT File Structure</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="562-booting-the-linux-kernel-via-the-bootm-command"><a class="header" href="#562-booting-the-linux-kernel-via-the-bootm-command">5.6.2 Booting the Linux Kernel via the bootm Command</a></h3>
+<p>Following the analysis of the binary image structures, this section
+evaluates the technical workflow under which U-BOOT leverages the
+do_bootm function to boot the Linux kernel.</p>
+<p>The do_bootm function initially parses the command line string to verify
+if specific bootm sub-commands are declared. If sub-commands are
+detected, U-BOOT processes them sequentially to advance the bootstrap
+sequence. A sub-command executes only a partial or fractional slice of
+the complete bootm pipeline rather than a monolithic full boot. The
+tracking framework registers exactly eight sub-commands: start, loados,
+ramdisk, fdt, cmdline, bdt, prep, and go. If multiple sub-commands are
+issued manually by an operator, they must strictly follow this listed
+order, although executing the entire set is not structurally mandatory.</p>
+<p>The universal syntax for the bootm utility is structured as follows:</p>
+<p><code>bootm [addr [arg1 [arg2]]]</code></p>
+<p>Where addr specifies the location in memory hosting the primary kernel
+image (typically a uImage or FIT blob base address), arg1 defines the
+physical memory address of the initialization RAM disk (initrd), and
+arg2 targets the compiled Flattened Device Tree (fdt) blob. If the
+target operating system configuration bypasses the use of a RAM disk, a
+hyphen placeholder (-) must be explicitly passed in place of arg1. As
+parsed within the bootcmd script analyzed in preceding chapters, the
+typical runtime execution syntax is expressed as:</p>
+<p><code>bootm ${tee_addr} - ${fdt_addr}</code></p>
+<p>Expanding this environment variable string (e.g., executing bootm
+0x20000000 - 0x18000000) instructs the bootloader to branch execution
+into the program image hosted at address 0x20000000 without packing an
+initrd payload, while mapping the active Device Tree structure from base
+offset 0x18000000.</p>
+<p>If no explicit sub-commands accompany the bootm invocation, the state
+machine must execute a complete, monolithic boot pipeline from scratch.
+Upon completing early sub-command checks, if the platform configuration
+has enabled High Assurance Boot (CONFIG_HAB), the routine triggers
+validation loops to authenticate the cryptographic signature and
+integrity of the outer uImage envelope. Concurrently, if the build
+incorporates support for OP-TEE secure layers, secondary hooks execute
+to validate the underlying zImage integrity.</p>
+<p>Finally, the engine routes execution into do_bootm_states(), which acts
+as a centralized coordinator to step through the core initialization
+states sequentially: BOOTM_STATE_START, BOOTM_STATE_FINDOS,
+BOOTM_STATE_FINDOTHER, BOOTM_STATE_LOADOS, BOOTM_STATE_OS_PREP,
+BOOTM_STATE_OS_FAKE_GO, and BOOTM_STATE_OS_GO.</p>
+<p>If a RAM-disk-based filesystem is deployed, the system branches into
+BOOTM_STATE_RAMDISK right after the OS loading phase concludes.
+Furthermore, if the processing architecture targets legacy PowerPC or
+MIPS silicon, the state machine must step through the OS_CMDLINE
+sub-state to construct command line strings. For an NXP i.MX6
+application processor running mainline Linux, the definitive operational
+block array requires processing BOOTM_STATE_START, BOOTM_STATE_FINDOS,
+BOOTM_STATE_FINDOTHER, and BOOTM_STATE_LOADOS. Each discrete sub-state
+maps directly to a localized helper routine. The final sequence
+tiers—encompassing BOOTM_STATE_OS_PREP, BOOTM_STATE_OS_FAKE_GO, and
+BOOTM_STATE_OS_GO—are inherently OS-dependent; their final low-level
+executions are managed dynamically by invoking the targeted function
+pointers resolved via boot_fn() and boot_selected_os().</p>
+<p>The continuous runtime execution flow tracking the do_bootm() function
+is mapped out in the schematic flowchart below:</p>
+<center>
+<figure>
+<img src="./media/image36.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-18 do_bootm() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>The technical implementations and internal objectives of each core
+module within this flowchart are detailed below:</p>
+<p>1. uImage Authenticity Verification</p>
+<p>For the i.MX6 Solo/DualLite processors, U-BOOT handles cryptographic
+verification and decryption by interfacing directly with the hardware
+Cryptographic Acceleration and Assurance Module (CAAM) hosted inside the
+on-chip High Assurance Boot (HAB) silicon block. This hardware engine
+parses the binary Command Sequence File (CSF) tables embedded within the
+image's IVT wrapper to validate the uImage payload block. The physical
+base coordinates where the target uImage is evaluated align with the
+memory reference value configured inside the ${tee_addr} environment
+variable.</p>
+<p>2. zImage Parameter Configuration</p>
+<p>The bootloader inspects the internal text headers of the raw compressed
+kernel payload to extract the explicit zImage boundary vectors,
+registering its absolute starting and terminating memory coordinates.
+The baseline memory alignment tracking this zImage structure header is
+determined by the physical address value assigned to the standard U-BOOT
+${loadaddr} environment variable.</p>
+<p>3. zImage Authenticity Verification</p>
+<p>U-BOOT leverages the on-chip HAB validation infrastructure and the CAAM
+engine to evaluate the CSF signatures tracking the zImage container,
+executing hardware-enforced image decryption and decryption verification
+passes. It must be noted that this specific ROM-driven pipeline handles
+authentication strictly for legacy single-image or multi-image binary
+wrappers; modern FIT container structures bypass this pathway, utilizing
+integrated self-contained cryptographic nodes to declare and enforce
+their own verification algorithms.</p>
+<p>4. Sub-state Orchestration via do_bootm_states</p>
+<p>The centralized coordinator steps through the following technical
+operations sequentially:</p>
+<ul>
+<li>
+<p>Initialization: Zeroes out all structural members of the internal
+bootm_headers_t tracking layout. If the platform build parameters have
+toggled the Logical Memory Block (CONFIG_LMB) macro constraint to
+fence off the lower bounds of memory accessible to the guest Linux
+kernel, the routine allocates and provisions the necessary lmb memory
+reservation tables at this stage.</p>
+</li>
+<li>
+<p>Kernel Image Discovery: Initiates a lookup routine inside the loaded
+image block to isolate and parse the primary operating system kernel
+payload. The linear structural pipeline governing this component
+discovery path is illustrated below:</p>
+</li>
+</ul>
+<center>
+<figure>
+<img src="./media/image37.png" style="width:80%;height:auto" />
+<figcaption>
+<p>Figure 5-19 bootm_find_os() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+- Secondary Image Discovery: Searches the image fields to resolve and
+  map external initialization components, including detached root RAM
+  disks (ramdisk), Flattened Device Tree blobs (fdt), or generic
+  secondary loadable payloads. The flowchart below charts the lookup
+  execution pipeline targeting a ramdisk component when the boot loader
+  is configured to parse modern FIT container layouts. (When operating
+  over legacy single- or multi-image configurations, this discovery loop
+  is significantly more linear). Furthermore, if the platform enables
+  raw initial RAM disk support (raw initrd), developers can explicitly
+  pass the target initrd execution address vectors directly via the
+  bootm command string using colon separator delimiters. The initrd
+  represents a transient baseline file system structure initially staged
+  in RAM by the bootloader to provide the early user-space mounting
+  environment during the Linux initialization phase.
+<center>
+<figure>
+<img src="./media/image38.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-20 bootm_find_other() Function</p>
+</figcaption> Flowchart
+</figure>
+</center>
+<ul>
+<li>Operating System Payload Loading: Unpacks and relocates the compiled
+kernel binary payload contained inside the uImage wrapper. This data
+decompression and relocation pipeline follows the workflow detailed
+below:</li>
+</ul>
+<center>
+<figure>
+<img src="./media/image39.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-21 bootm_load_os() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<ul>
+<li>Boot Handler Binding: Evaluates the explicit target operating system
+index stored within the os metadata field of the uImage header block.
+It invokes bootm_os_get_boot_func() to index into the generic
+boot_os[] function pointer array, dynamically binding the
+appropriate OS-specific bootstrap function handler. If the parsed os
+field matches configuration constant IH_OS_U_BOOT, the function
+pointer maps directly to the do_bootm_standalone() routine. In systems
+that execute bare-metal applications or dedicated firmware payloads
+without launching a complex multi-tasking operating system kernel,
+setting the target image profile to IH_OS_U_BOOT allows U-BOOT to
+unpack the standalone software directly into memory and hand over
+execution. The operational sequence tracking this standalone pathway
+is mapped out below:</li>
+</ul>
+<center>
+<figure>
+<img src="./media/image40.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-22 do_bootm_standalone() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+Conversely, when the os header token evaluates to configuration index
+IH_OS_LINUX, verifying that the payload data segment encapsulates a
+valid Linux operating system kernel, the bound function pointer resolves
+directly to the do_bootm_linux() routine. At the final execution
+boundary, do_bootm_states() calls the top-level handler
+boot_selected_os(), which fires the resolved pointer to route execution
+straight into the Linux bootstrap sequence. For all standard Linux
+targets, this metadata flag must be explicitly configured to
+IH_OS_LINUX.
+<p>The low-level execution pipeline tracking the do_bootm_linux() bootstrap
+routine is structured as follows:</p>
+<center>
+<figure>
+<img src="./media/image41.png" style="width:70%;
+height:auto" />
+<figcaption>
+<p>Figure 5-23 do_bootm_linux() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+Varying the integer constant inside the os header field alters the
+targeted operating system boot pathway and initialization logic
+accordingly. Upon concluding its low-level hardware alignment, parameter
+table packaging, and device tree mapping tasks, the do_bootm_linux()
+routine issues an unconditional branch instruction jumping directly into
+the absolute entry point execution vector (entry) defined by the kernel
+image. At this exact instruction cycle, U-BOOT terminates its
+operational life cycle, relinquishing absolute system control over to
+the newly active Linux kernel.
+<h3 id="563-spl-booting"><a class="header" href="#563-spl-booting">5.6.3 SPL Booting</a></h3>
+<p>The preceding sections evaluated the standard (Proper) execution pathway
+of U-BOOT. However, when the physical capacity of the CPU's on-chip
+SRAM is heavily constrained, the system can be configured to execute an
+SPL-based multi-stage boot sequence instead. In this topology, the
+hardcoded on-chip boot ROM first copies the lightweight SPL binary from
+storage into internal SRAM. Once active, the SPL initializes critical
+low-level infrastructure, brings up the clock trees, and configures the
+external DRAM controller. After volatile memory becomes fully
+accessible, the SPL reads the high-capacity U-BOOT Proper binary image
+from the storage medium into physical RAM, subsequently handing over
+execution so that U-BOOT Proper can drive the definitive operating
+system launch. As charted in Figure 5-3, both the SPL boot sequence and
+the standard U-BOOT Proper sequence ultimately transition into a
+post-relocation C entry function named board_init_r(). It must be
+explicitly noted that although both execution models invoke a function
+sharing the identical literal identifier, their internal programmatic
+structures and compilation outputs differ completely; the specialized
+board_init_r() handler processed during the SPL phase is defined
+explicitly within the source file git/common/spl/spl.c. When the
+platform build configuration toggles the macro switches to generate an
+SPL image, the linker cleanly couples this spl.c entry target. The
+fundamental responsibilities of this handler are to execute localized
+hardware initializations, parse the storage controllers to resolve the
+SPL boot list, and execute the final-stage bootloader binary. Its
+operational runtime pipeline is organized as illustrated in the
+schematic flowchart below:</p>
+<center>
+<figure>
+<img src="./media/image42.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-24 SPL-Driven Bootloader Execution Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>The programmatic operations and technical objectives of each core
+section within this flowchart are analyzed in detail below:</p>
+<p>The board_init_r() function initially invokes a clear routine to zero
+out the spl_boot_list array structure. This tracking array functions as
+a prioritized linear repository storing the entry vectors and driver
+addresses of all valid, registered boot storage devices available on the
+hardware platform. The system then enters the spl_set_bd() helper block,
+which resolves the physical memory location allocated to store the
+baseline board parameters (board_info tables), an address boundary
+typically calculated and hardcoded at compile time by the linker script.</p>
+<p>If the active build parameters have enabled the
+CONFIG_SYS_SPL_MALLOC_START preprocessor switch, the system calls
+mem_malloc_init() to carve out and provision the explicit memory space
+boundaries required to drive the dynamic heap allocator (malloc())
+engine during the SPL phase. Upon doing so, it sets the
+GD_FLG_FULL_MALLOC_INIT flag bit inside the gd-&gt;flags bitmask array,
+informing downstream drivers that the early heap framework is fully
+initialized and operational.</p>
+<p>The CONFIG_SYS_SPL_MALLOC_START identifier maps to an
+architecture-critical macro definition across embedded U-BOOT deployment
+pipelines, explicitly defining the physical baseline memory coordinates
+allocated to anchor the local heap context during the SPL phase. Because
+the physical memory available inside raw on-chip SRAM cells during the
+earliest stages of hardware bring-up is highly constrained, supporting
+dynamic memory allocation routines (the execution of standard malloc()
+loops) within the stripped SPL footprint requires that a precise,
+isolated region of volatile memory be manually fenced off to function as
+a temporary heap. This macro establishes the physical baseline boundary
+for that SPL heap allocation.</p>
+<p>If an interrogation of the status bits inside gd-&gt;flags reveals that
+the GD_FLG_SPL_INIT indicator is unassigned, signifying that the
+foundational initialization routines targeting the SPL layer have not
+yet been processed, the state machine branches to call the core
+spl_init() function. This routine executes essential, mandatory
+low-level framework configurations. The linear software workflow mapping
+this initialization sequence is structured as follows:</p>
+<center>
+<figure>
+<img src="./media/image43.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-25 spl_init() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>The bloblist_init() function checks for the existence of a binary blob
+list at the physical address defined by CONFIG_BLOBLIST_ADDR. If no
+valid list is detected, it initializes a new instance. The bloblist acts
+as a secure, centralized storage buffer to carry binary metadata
+structures across boot stages.</p>
+<p>The setup_spl_handoff() routine checks this bloblist to verify if
+pre-staged handoff metadata exists. System engineers can populate custom
+handoff manifests via the struct spl_handoff structure to pass vital
+tracking data—such as high-level memory topology parameters,
+persistent reset status flags, and network controller MAC
+addresses—directly to the downstream operating system layers.</p>
+<p>If the platform configuration enables board-level initialization hooks
+during the compilation step, developers can implement a custom
+spl_board_init() routine to execute platform-specific hardware
+provisioning before loading subsequent stages.</p>
+<p>Furthermore, board_init_r() orchestrates the initialization of the
+hardware watchdog timer, configures the active DRAM bank parameters, and
+allocates a zero-initialized memory block to anchor the spl_image
+descriptor structure. The spl_image descriptor functions as the primary
+repository tracking the metadata required during the SPL boot pipeline.
+Its structural layout is defined as follows:</p>
+<pre><code>struct spl_image_info {	
+const char *name;
+	u8 os;
+	uintptr_t load_addr;
+	uintptr_t entry_point;
+	void *fdt_addr;
+	u32 boot_device;
+	u32 size;
+	u32 flags;
+	void *arg;
+	ulong dcrc_data;
+	ulong dcrc_length;
+	ulong dcrc;
+	uint64_t rbindex;
+};
+
+</code></pre>
+<p>The majority of these tracking fields are extracted directly from the
+image header block. The runtime argument field is bound by system
+parameters to .arg = CONFIG_SYS_SPL_ARG_ADDR, while the default storage
+device mapping is initialized to .boot_device = BOOT_DEVICE_NONE.</p>
+<p>The board_boot_order() routine assigns the function pointer address of
+spl_boot_device() to the primary slot of the spl_boot_list array. This
+routing utility is declared with a weak linkage attribute, allowing
+developers to substitute a board-specific implementation. For the i.MX6
+applications processor, the native spl_boot_device() routine reads the
+hardcoded state of the hardware boot mode registers to resolve and
+return the active primary storage device type.</p>
+<p>Following this sequence, boot_from_devices() processes the prioritized
+order specified in the spl_boot_list. It scans the custom linker section
+.u_boot_list_2_spl_image_loader_1 to find a structural spl_image_loader
+entry that matches the active boot device. This linker-generated
+tracking structure encapsulates the peripheral type identifier, the
+descriptive device name string, the storage driver routine pointer
+(load_image), and the targeted program entry vector. Once a matching
+descriptor block is resolved, the system invokes spl_load_image(), which
+redirects execution straight into the storage-specific handler pointer
+load_image() to pull the U-BOOT Proper binary from physical storage
+blocks into RAM. If the load routine encounters a media fault or data
+verification error, it discards the tracking context and drops down to
+process the next sequential element inside the spl_boot_list, looping
+until a valid load succeeds or all registered peripherals are exhausted.
+The specialized section .u_boot_list_2_spl_image_loader_1 is generated
+statically at link time.</p>
+<p>Upon successfully parsing and staging the target image file inside
+physical RAM, the state machine evaluates the operating system metadata
+field (os) inside the image header. It triggers a branch command to jump
+into the resolved entry vector using stage-specific handlers. For
+example, if the platform incorporates OP-TEE secure architectures (where
+the metadata flag maps to IH_OS_OPTEE), the system invokes
+spl_optee_entry() to surrender absolute platform execution to the secure
+runtime environment. Conversely, when the tracking parameter maps to
+IH_OS_LINUX, execution branches into the jump_to_image_linux() routine
+to pass absolute control over to the Linux bootstrap hooks.</p>
+<p>To fetch and reconstruct binary files from physical media blocks,
+spl_load_image() relies directly on low-level media access operations
+provided by the peripheral subsystem drivers. For i.MX6 architectures
+booting from an MMC/SD interface controller, these media access routines
+are defined within the source module git/common/spl/spl_mmc.c, where the
+primary entry function is declared as spl_mmc_load_image.</p>
+<p>The build system leverages the standard macro declaration
+SPL_LOAD_IMAGE_METHOD("MMC2", 0, BOOT_DEVICE_MMC2, spl_mmc_load_image)
+to bind the execution address of the spl_mmc_load_image routine straight
+to the primary load_image function pointer slot. If the platform
+configuration includes Device Tree capabilities, load_image() pulls the
+combined binary blob u-boot-dtb.imx from storage into RAM; if Device
+Tree support is disabled, it pulls the legacy container u-boot.imx. The
+subsequent sections analyze the operational stages through which the SPL
+layer unpacks and stages storage payloads, using spl_mmc_load_image() as
+a reference design model.</p>
+<p>The true heavy lifting of fetching data blocks from physical media
+sectors is managed by the secondary helper routine spl_mmc_load(). The
+primary entry function spl_mmc_load_image() acts as an interface wrapper
+that evaluates active preprocessor build switches to pass distinct
+parameter configurations over to spl_mmc_load().</p>
+<p>The spl_mmc_load() function initially checks if the targeted MMC/SD
+interface controller driver has completed its internal initialization.
+If the descriptor structure pointer evaluates to null, the routine calls
+spl_mmc_find_device() to resolve the platform-specific hardware
+controller index. Depending on whether the compiled U-BOOT binary
+implements the modern Driver Model (DM) architecture or relies on legacy
+driver frameworks, the code branches to invoke either mmc_init_device()
+or mmc_initialize() to fully bring up the storage interface. If the
+device descriptor is already active, the routine bypasses initialization
+entirely to execute immediate bus-level communication handshakes with
+the attached storage card.</p>
+<p>It must be explicitly noted that if the core struct mmc descriptor block
+indicates that the target peripheral supports asynchronous
+initialization pipelines, mmc_init_device() invokes mmc_start_init() to
+launch the storage initialization routines as an asynchronous background
+thread, allowing the bootloader to proceed with non-dependent tasks
+simultaneously.</p>
+<p>Upon completing the low-level hardware bring-up, spl_mmc_load() invokes
+mmc_init() to pull the raw Card Identification (CID) and Card-Specific
+Data (CSD) registers from the media, negotiating optimal operational
+clock frequencies and defining the maximum available data bus width
+(allocating 1-bit, 4-bit, or 8-bit lines).</p>
+<p>Once bus negotiation succeeds, spl_mmc_load() calls spl_boot_mode() to
+poll the storage configuration parameters and isolate the specific data
+parsing layout supported by the medium. For an active MMC peripheral,
+the SPL runtime framework identifies exactly three primary boot modes:
+MMCSD_MODE_FS, MMCSD_MODE_EMMCBOOT, and MMCSD_MODE_RAW. The
+spl_boot_mode() utility is exported as a weak symbol, enabling system
+developers to override its evaluation rules via board-specific logic.</p>
+<p>If the returned status forces an eMMC boot partition pathway
+(MMCSD_MODE_EMMCBOOT), the driver handles the hardware-specific
+partition switching loops required to target either the boot0 or boot1
+hardware partition areas. If the active storage codebase is configured
+under a minimalist layout constraint (MMC_TINY), the driver maps a
+basic, direct register switch; otherwise, it invokes standard block
+device partition-selection routines.</p>
+<p>When the state machine selects a raw sector block configuration
+(MMCSD_MODE_RAW), the parser prioritizes attempting a direct operating
+system launch. At this junction, if a call to the check routine
+spl_start_uboot() returns a logical false value, the SPL completely
+bypasses the secondary bootloader stage to load and launch the Linux
+kernel directly from raw blocks (known as Falcon Mode). Conversely, if
+spl_start_uboot() returns a logical true value, indicating that the
+platform must load the complete U-BOOT Proper binary image, the function
+evaluates the configuration parameters to read the full U-BOOT payload
+from either a distinct partition index (USE_PARTITION) or from an
+absolute, hardcoded sector offset address (USE_SECTOR).</p>
+<p>If the platform is compiled to support multi-image redboot or redundant
+safe flashing infrastructures (CONFIG_DUAL_BOOTLOADER), the driver
+routes execution through spl_mmc_get_u_boot_raw_sector() to evaluate
+boundary conditions and isolate the precise starting sector offset
+hosting the primary U-BOOT image within the MMC layout.</p>
+<p>If the parsed tracking parameters force a filesystem access profile
+(MMCSD_MODE_FS), the driver transfers execution control to the internal
+routine spl_mmc_do_fs_boot(). This block initiates low-level filesystem
+mounts to parse and traverse local FAT or EXT4 file allocation paths,
+searching for and extracting the primary bootloader file by its explicit
+filename mapping (such as searching for u-boot.img).</p>
+<p>The technical flowchart provided below maps out the precise, end-to-end
+programmatic steps through which the spl_mmc_load_image() routine
+imports the U-BOOT Proper binary image from physical media into physical
+memory:</p>
+<center>
+<figure>
+<img src="./media/image45.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-26 spl_mmc_load_image() Handoff Execution Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>When the SPL is deployed to directly boot the guest operating system, it
+invokes the mmc_load_image_raw_os() function to copy the raw Linux
+kernel image blocks from the media sectors into physical memory. The
+execution pipeline tracking this raw operating system load routine is
+structured as follows:</p>
+<center>
+<figure>
+<img src="./media/image46.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 5-27 mmc_load_image_raw_os() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+<p>The following analysis profiles the operational workflow through which
+the SPL layer parses, loads, and extracts operating system components
+from modern multi-image structures, using the spl_load_simple_fit()
+routine as an architectural reference design model.</p>
+<p>The spl_load_simple_fit() function accepts exactly four parameter
+arguments: a pointer to the target struct spl_image_info structure
+registering the runtime configuration metrics of the image, a pointer to
+a struct spl_load_info tracking layout defining the foundational
+parameters of the storage peripheral, a sector offset pointer
+designating the target block sequence to sample on the device, and a
+memory reference pointer targeting the source image file header. This
+routine parses the binary header blocks referenced by the file header
+pointer and populates the data fields inside the spl_image_info
+structure. As detailed in the preceding sections, this structure
+archives the vital metadata flags extracted from the image header to
+coordinate downstream image relocation and execution phases cleanly. The
+companion spl_load_info layout encapsulates low-level storage
+architecture parameters, declared as follows:</p>
+<pre><code>struct spl_load_info {
+        void *dev;
+        void *priv;
+        int bl_len;
+        const char *filename;
+        ulong (*read)(struct spl_load_info *load, ulong sector, ulong count, void *buf);
+};
+</code></pre>
+<p>Within this tracking layout, the .dev field points to the active boot
+storage peripheral device instance, .priv points to the private tracking
+structures managed by that specific peripheral, and .bl_len registers
+the device's native data access block boundary size (block length in
+bytes). The .read field maps to a localized block-read function pointer
+provided directly by the underlying storage peripheral's device driver
+module.</p>
+<p>The spl_load_simple_fit() routine initially determines the absolute size
+of the target .itb container file, calculates the memory constraints
+required to accommodate the payload, and calls the driver-specific
+function pointer .read to read the entire FIT image block stream from
+storage into an isolated scratch buffer memory. Once the image metadata
+blocks are staged inside this memory cache, the internal parser executes
+a structural traversal across the image tree to isolate the core /images
+container node.</p>
+<p>Upon successfully resolving the /images tree node, if the platform
+compilation profile includes dual-boot rollback protection capabilities,
+the parsing engine queries the /configurations container block to look
+up the secure rollback index (rbindex) attribute. If a valid rbindex
+marker is found, its relative structural byte offset address within the
+image file is calculated and written directly into the .rbindex domain
+tracking field inside the spl_image_info structure.</p>
+<p>Concurrently, if the platform configuration includes integrated FPGA
+subsystem support, spl_load_simple_fit() evaluates the /images tree
+branches to isolate any embedded /fpga child nodes; if an active
+bitstream segment is found, the routine calls downstream programming
+paths to write that binary image directly into the physical FPGA
+configuration registers.</p>
+<p>If FPGA support is disabled or the active .itb container file lacks an
+integrated /fpga node, the parser scans the active target
+/configurations node to extract the default software stack parameters.
+It initially attempts to resolve a /firmware assignment property; if
+that field is missing, it drops down to parse the primary /kernel
+assignment entry, and if that lookup also fails, it searches for a
+secondary generic /loadable allocation property. If the tree parser
+completes this cascade without resolving any valid bootable components,
+the function returns a failure error code. Conversely, if a target
+configuration node is resolved, the system routes execution control to
+the internal routine spl_load_fit_image(). This helper function
+validates and relocates the matching image files into their physical
+destination memory targets (or maps their relative coordinates if the
+binary blocks are already present in RAM) and executes the targeted data
+decompression algorithms. The sequential software execution pipeline
+tracking this workflow is structured as follows:</p>
+<center>
+<figure>
+<img src="./media/image47.png" style="width:80%;height:auto" />
+<figcaption>
+<p>Figure 5-28 spl_load_simple_fit() Function Flowchart</p>
+</figcaption>
+</figure>
+</center>
+For a standard Linux compilation target, once the core kernel image
+payloads have been successfully staged and unpacked within physical
+memory, the jump_to_image_linux() routine interrogates the entry point
+metadata domain (entry) declared within the image header to establish
+the absolute starting instruction address of the kernel. It then
+executes essential runtime environment cleanup loops, silhouettes the
+asynchronous clock engines, and turns off internal caches.
+<p>At the absolute termination cycle, it calls the execution entry wrapper
+image_entry(), passing the registered target machine identifier code
+(machid) and the boot argument vector reference pointer
+(spl_image-&gt;arg) directly over to the guest operating system while
+forcing a hardware execution branch to jump straight into the resolved
+kernel entry address. At this exact instruction loop, the SPL layer
+completes its lifecycle, and the newly active Linux kernel takes full
+control of the entire hardware platform.</p>
+<p>This concludes Chapter 5 and the exhaustive technical analysis tracking
+the U-BOOT Bootloader and Embedded SPL Initialization Lifecycles.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="5.5 Running of U-BOOT .html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="chapter_6.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="5.5 Running of U-BOOT .html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="chapter_6.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

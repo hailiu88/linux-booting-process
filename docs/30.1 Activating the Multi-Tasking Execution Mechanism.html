@@ -1,0 +1,832 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Activating the Multi-Tasking Execution Mechanism - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/30.1 Activating the Multi-Tasking Execution Mechanism.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="301-activating-the-multi-tasking-execution-mechanism"><a class="header" href="#301-activating-the-multi-tasking-execution-mechanism">30.1 Activating the Multi-Tasking Execution Mechanism</a></h2>
+<p>Upon reaching this advanced milestone within the system bootstrap
+lifecycle, the kernel's fundamental initialization blocks are
+essentially finalized, and the core operating system stands prepared to
+transition into full multi-tasking operations. As demonstrated by its
+nomenclature, while the primary systemic responsibility of the function
+arch_call_rest_init() is to route control to the final bootstrap funnel
+rest_init(), the routine prepends the arch_ architecture prefix and is
+compiled as a weak symbol placeholder (__weak). This deliberate design
+pattern authorizes architecture-specific developers to insert mandatory
+low-level hardware cleanup directives at the absolute final microsecond
+preceding entry into the system's runtime multi-tasking loops. Although
+the vast majority of computing platforms override this stub merely to
+execute a simple pass straight down into rest_init(), explicit processor
+architectures require specialized hardware-level finalization tasks
+(such as cleaning up platform-specific internal CPU tracking registers)
+before shifting into multi-tasking execution. At present, only the IBM
+s390 architecture implements additional hardware operations inside this
+hook, while alternative computing environments pass control directly
+down to rest_init().</p>
+<p>The function arch_call_rest_init() is hosted within the central kernel
+initialization tree file git/init/main.c, and its definition is
+implemented as follows:</p>
+<pre><code>void __init __weak arch_call_rest_init(void)
+{
+	rest_init();
+}
+</code></pre>
+<p>This routine is exceptionally straightforward, serving as a direct path
+into rest_init(). The architectural workflow and operational milestones
+processed during the execution of rest_init() are broken down below.</p>
+<p>The core function rest_init() is alternative hosted within the source
+file git/init/main.c, and its definition is implemented as follows:</p>
+<pre><code>noinline void __ref rest_init(void)
+{
+	struct task_struct *tsk;
+	int pid;
+	rcu_scheduler_starting();
+	pid = kernel_thread(kernel_init, NULL, CLONE_FS);
+	rcu_read_lock();
+	tsk = find_task_by_pid_ns(pid, &amp;init_pid_ns);
+	set_cpus_allowed_ptr(tsk, cpumask_of(smp_processor_id()));
+	rcu_read_unlock();
+	numa_default_policy();
+	pid = kernel_thread(kthreadd, NULL, CLONE_FS | CLONE_FILES);
+	rcu_read_lock();
+	kthreadd_task = find_task_by_pid_ns(pid, &amp;init_pid_ns);
+	rcu_read_unlock();
+	system_state = SYSTEM_SCHEDULING;
+	complete(&amp;kthreadd_done);
+	schedule_preempt_disabled();
+	cpu_startup_entry(CPUHP_ONLINE);
+}
+</code></pre>
+<p>The execution of this function marks the definitive milestone where the
+Linux kernel transitions from a linear, sequential initialization code
+script into a fully operational, multi-tasking operating system capable
+of orchestrating independent process threads. It serves as the absolute
+finish line of the core synchronous kernel boot sequence, and
+constitutes the starting grid for multi-tasking task scheduling loops.</p>
+<p>The routine initially dispatches rcu_scheduler_starting() to formally
+broadcast to the system that the RCU scheduler framework has commenced
+active operations, programmatically updating the state tracking variable
+rcu_scheduler_active to evaluate as RCU_SCHEDULER_RUNNING [19.2,
+21.3]. Following this synchronization milestone, the function calls
+kernel_thread() to instantiate Linux's definitive Process 1—the
+primary system kernel thread kernel_init (which behaves as a specialized
+process managing its own isolated tracking PID, invoked via the specific
+instantiation pathway kernel_init(NULL)), and places this fresh task
+node onto the scheduler's runqueues to wait for the task scheduler to
+pick it up for execution. This represents the absolute first authentic
+process spawned by the operating system since power-on [26.1]. It is
+this explicit process that will eventually execute a boundary crossover,
+shifting its context from kernel space down into user space to invoke
+the absolute first user-space executor—the definitive user init daemon
+(such as systemd or SysVinit). Once active, this user-space init process
+assumes full responsibility for spawning and coordinating the
+comprehensive array of operating system daemons and target background
+services.</p>
+<p>Immediately succeeding the creation of this primary system thread, the
+routine captures the RCU read-side lock via rcu_read_lock() and
+evaluates find_task_by_pid_ns() within the root PID namespace
+init_pid_ns to extract the corresponding task descriptor pointer (struct
+task_struct) matching the newly spawned Process 1 [19.1, 26.1].
+Because the system's multi-core load-balancing structures and task
+migration mechanisms are not yet fully operational or prepared to
+dynamically shuffle threads across sockets, the function dispatches
+set_cpus_allowed_ptr() to forcefully clamp and bind the execution of
+Process 1 to run exclusively on the current active primary bootstrap CPU
+core, subsequently releasing the RCU synchronization lock via
+rcu_read_unlock() [17.3].</p>
+<p>The subsequent operational step within the function is to invoke
+numa_default_policy(). This call hot-swaps the early boot-stage
+cross-node memory tracking policies away from the early interleaved
+configurations to lock the system's global memory allocation rules to
+adopt the low-latency MPOL_DEFAULT template [25.4]. Following this
+policy transition, the function dispatches a secondary call to
+kernel_thread() to instantiate Process 2—the master kernel thread
+manager, kthreadd—and queries the root namespace to resolve its
+corresponding task descriptor. Process 2 acts as the authoritative
+master daemon responsible for spawning and supervising all subsequent
+background kernel threads; moving forward, any asynchronous internal
+kernel workload that requires a dedicated execution daemon (such as
+block layer disk I/O managers, network packet workers, or background
+lookaside cache memory reclamation daemons) is generated exclusively via
+this kthreadd context [24.3, 27.6].</p>
+<p>Upon spawning these two primary master threads, the routine advances the
+global status coordinator variable system_state to evaluate as
+SYSTEM_SCHEDULING, indicating that the operating system has formally
+stepped into full task-scheduling mode. It concurrently executes the
+completion synchronization primitive complete(&amp;kthreadd_done) to
+broadcast across the kernel that the master kthreadd engine stands fully
+operational, unblocking any upstream initialization tasks or dependent
+threads that were waiting for this background manager to spin up.</p>
+<p>With Process 1 and Process 2 fully active in memory and the system
+status promoted to SYSTEM_SCHEDULING, the core task scheduler officially
+assumes complete jurisdiction over the machine's execution resources,
+enabling running threads to smoothly execute context switches, sleep on
+wait queues, or yield CPU cores dynamically [17.3, 21.6].</p>
+<p>At this explicit junction along the pipeline, rest_init() has
+successfully fulfilled its historical boot mission inside the monolithic
+start_kernel() sequence, and prepares to guide Process 0 (the primary
+initialization context) over to its permanent historical destination:
+the continuous, low-power Idle Loop. It enters a perpetual,
+non-terminating loop structure driven by the handler
+cpu_startup_entry(). Whenever the machine registers valid computational
+tasks, the scheduler switches Process 0 out to let production
+application threads consume the core. Conversely, the exact microsecond
+the system-wide runqueues run completely dry, the scheduler cycles
+execution back to this thread, allowing it to programmatically drop the
+CPU core into a low-power, clock-gated hardware state (such as executing
+an hlt halt instruction to wait for the next physical hardware
+interrupt) to minimize energy consumption. The function
+cpu_startup_entry() is hosted within the core task scheduler
+architecture file git/kernel/sched/idle.c, and its definition is
+implemented as follows:</p>
+<pre><code>void cpu_startup_entry(enum cpuhp_state state) 
+{
+	arch_cpu_idle_prepare();
+	cpuhp_online_idle(state);
+	while (1)
+		do_idle();
+}
+</code></pre>
+<p>This routine executes three primary operations sequentially:</p>
+<ol>
+<li>
+<p>Architecture-Specific Idle Preparation: Executes low-level processor
+initialization passes required before entering the halt state. For
+ARM platform architectures, this preparation step focuses on opening
+the local Fast Interrupt Request (FIQ) routing channels [20.4,
+29.4].</p>
+</li>
+<li>
+<p>Promoting the CPU State to Online/Idle: Registers the active core
+within the hotplug infrastructure to signal that it is online and
+available to execute the background idle loop components [21.2].</p>
+</li>
+<li>
+<p>Dropping into the Non-Terminating Idle Loop: Enters a perpetual
+while(1) dead loop that drives the core idle machinery.</p>
+</li>
+</ol>
+<p>The function do_idle() called within this non-terminating loop behaves
+as the mathematical core driving the Linux idle task. In essence,
+whenever the local runqueues run entirely dry of runnable application
+threads, the scheduler routes execution here to park the CPU core in a
+low-power state. The moment a rescheduling condition or pending task is
+detected, the core breaks out of the idle thread and returns control to
+the master scheduling engine [17.3, 30.1]. do_idle() is hosted within
+the core scheduling source tree file git/kernel/sched/idle.c, and its
+central technical responsibility is to maximize processor energy
+efficiency while keeping the hardware fully prepared to catch
+asynchronous wake-up signals. Its execution pipeline is partitioned
+across the following structural phases:</p>
+<ul>
+<li>
+<p>Idle Phase Entry and Synchronization: The routine dispatches
+__current_set_polling() to set the active core's polling bit field,
+effectively broadcasting a microarchitectural message to adjacent
+sibling cores: "I have dropped into a power-saving or polling loop;
+if you need to delegate a newly ready thread over to my runqueues,
+simply flip my localized need_resched preemption flag directly."
+Following this advertisement, it executes tick_nohz_idle_enter() to
+transition the timekeeping subsystem into the core NO_HZ tickless idle
+mode. If the local timers enclose no pending expiration boundaries,
+the kernel completely shuts down the high-frequency periodic
+scheduling clock interrupt to achieve significant power savings
+[21.2].</p>
+</li>
+<li>
+<p>The Master Idle Loop: As long as the system-wide preemption trackers
+register no explicit reschedule demands, the processor remains trapped
+in a low-power sleep cycle. The routine enforces a microarchitectural
+memory read barrier (smp_rmb()) to guarantee that the checked
+preemption bit flags reflect the most up-to-date states in cache. It
+subsequently disables local hardware interrupts (local_irq_disable())
+to neutralize race conditions, ensuring that while the kernel audits
+whether the core has been targeted for hotplug offlining or
+transitions into deep sleep, the atomic state checking sequence cannot
+be broken by a sudden asynchronous exception [24.2].</p>
+</li>
+<li>
+<p>Hotplug Eviction Handling (CPU Offline Processing): If the control
+groups or power management layers are executing a physical core
+teardown sequence, and the audit resolves that the current CPU has
+been taken offline, the loop halts local timing structures, commits
+its final state logs, and invokes the architecture hook
+arch_cpu_idle_dead(). This pass completely drops the silicon core into
+a deep, permanent hibernation state, stripping it from participating
+in subsequent task scheduling passes [21.2, 28.4].</p>
+</li>
+<li>
+<p>Selecting the Low-Power State Modality: This marks the critical
+microarchitectural decision junction: the engine evaluates whether to
+loop inside a low-latency software polling mode via cpu_idle_poll()
+versus committing the hardware to drop into deep silicon low-power
+sleep states via the advanced Governor subsystem inside
+cpuidle_idle_call().</p>
+</li>
+<li>
+<p>Asynchronous Wakeup and Idle Crossover: The moment an alternative core
+dispatches a cross-core Inter-Processor Interrupt (IPI), or a physical
+hardware clock event device reaches its expiration threshold and
+triggers an exception, the CPU core is forcefully awakened from its
+low-power sleep state [21.2, 23.4].</p>
+</li>
+<li>
+<p>Relinquishing Core Control: The function invokes the core scheduling
+interface schedule_idle(). This pass context-switches Process 0 out of
+the CPU register canvas, and hot-swaps in the newly ready, production
+user-space or kernel-space task thread that triggered the wake-up
+sequence [17.3, 30.1].</p>
+</li>
+</ul>
+<p>In summary, the execution of rest_init() structures two primary system
+lineages: Process 1 coordinates user-space environments and application
+frameworks, while Process 2 manages background kernel thread lifecycles
+[26.1]. The original, foundational system-boot thread transforms to
+behave exclusively as the system Idle Process (Process 0), stepping in
+to rest the physical silicon whenever the machine experiences a workload
+deficit.</p>
+<p>As established across preceding analyses, rest_init() dispatches
+kernel_thread() to instantiate Process 1 and Process 2 [30.1]. To
+clarify the low-level process creation primitives embedded within the
+Linux kernel, the operational execution path of kernel_thread() is
+mapped out below. This interface is defined within the process creation
+source tree file git/kernel/fork.c, implemented as follows:</p>
+<pre><code>pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
+{
+	struct kernel_clone_args args = {
+		.flags		= ((lower_32_bits(flags) | CLONE_VM |
+				    CLONE_UNTRACED) &amp; ~CSIGNAL),
+		.exit_signal	= (lower_32_bits(flags) &amp; CSIGNAL),
+		.stack		= (unsigned long)fn,
+		.stack_size	= (unsigned long)arg,
+	};
+	return kernel_clone(&amp;args);
+}
+</code></pre>
+<p>The function structure is streamlined: its primary systemic objective is
+to populate the fields of a unified configuration envelope of type
+struct kernel_clone_args, and subsequently call kernel_clone() to clone
+and duplicate the executing parent task context. Within this calling
+template, fn stores the function pointer referencing the thread's
+execution entry point (the callback target), arg references the private
+context data pointer to be passed into that callback, and flags controls
+the cloning behavior of the new thread. The kernel_clone_args container
+encloses an extensive array of parameters that define the absolute
+layout of the child process. The primary .flags member dictates
+precisely which explicit resources the child task must share with its
+parent versus creating an isolated boundary:</p>
+<ul>
+<li>
+<p>CLONE_VM: Shared virtual memory address spaces and page tables
+[26.2].</p>
+</li>
+<li>
+<p>CLONE_FS: Shared filesystem tracking metadata (such as root
+directories and umask states) [27.6].</p>
+</li>
+<li>
+<p>CLONE_FILES: Shared open file descriptor lookup tables [27.6].</p>
+</li>
+<li>
+<p>CLONE_SIGHAND: Shared signal handler method tables [27.8].</p>
+</li>
+<li>
+<p>CLONE_THREAD: Incorporates the child thread into the identical thread
+group as the parent.</p>
+</li>
+<li>
+<p>CLONE_PARENT_SETTID / CLONE_CHILD_SETTID / CLONE_CHILD_CLEARTID:
+Architectural pointers to sync thread IDs.</p>
+</li>
+<li>
+<p>CLONE_VFORK: Forces the parent task to block execution until the child
+releases its memory maps via an exec() or exit() transition.</p>
+</li>
+<li>
+<p>CLONE_NEWNS / CLONE_NEWPID / namespace flags: Enforces the dynamic
+creation of isolated multi-dimensional namespaces [27.1, 28.2].</p>
+</li>
+</ul>
+<p>Standard user-space processes launched via conventional forks omit these
+explicit resource-sharing flags. For instance, when configuring
+replication parameters to evaluate purely as flags = SIGCHLD, the system
+is instructed to enforce the following boundaries:</p>
+<ul>
+<li>
+<p>The child task claims a completely independent virtual memory manager
+structure (mm_struct) [26.7].</p>
+</li>
+<li>
+<p>The child operates out of an isolated, decoupled open file table
+registry [27.6].</p>
+</li>
+<li>
+<p>The child manages private, un-shared signal handling method arrays
+[27.8].</p>
+</li>
+<li>
+<p>The child broadcasts a standardized hardware SIGCHLD signal to notify
+its ancestor process the exact microsecond it terminates.</p>
+</li>
+</ul>
+<p>This combination of resource segregation defines what the operating
+system treats as an entirely authentic "New Process."</p>
+<p>Within this configuration envelope, .exit_signal identifies the specific
+termination signal to be propagated to the parent task upon death,
+.stack targets the base memory address of the execution stack to be
+consumed by the new task, and .stack_size registers the total byte width
+allocated to hold that runtime stack.</p>
+<p>The helper function kernel_clone() acts as the definitive, master
+architectural entry point within the Linux kernel responsible for
+generating every new process or thread thread across the system. It
+dynamic parses the passed clone arguments to replicate the active task
+context, carves out a new task_struct container, coordinates advanced
+subsystem logics handling debugging tracers (ptrace), identifier
+namespaces (pid), and blocking operations (vfork), and finally awakens
+the newly instantiated task node to commence real-time execution loops.
+This function is alternative hosted within the process creation source
+tree file git/kernel/fork.c, and its primary technical tasks encompass:</p>
+<ul>
+<li>
+<p>Validating Cloning Parameters and Flags: Audits the input
+configuration array to intercept invalid or contradictory
+resource-sharing combinations before allocating kernel memory.</p>
+</li>
+<li>
+<p>Evaluating Ptrace Interception Triggers: Determines whether the
+process creation sequence must branch to notify active user-space
+debugging tools or log ptrace tracing events.</p>
+</li>
+<li>
+<p>Invoking copy_process(): Triggers the underlying execution engine to
+physically clone and instantiate the process context descriptors.</p>
+</li>
+<li>
+<p>Injecting Creation Deltas Into the Entropy Pool: Gathers the
+micro-scale timing discrepancies and scheduling variables generated
+during task replication and mixes them straight into the random number
+generator to strengthen systemic entropy [22.2, 22.4].</p>
+</li>
+<li>
+<p>Broadcasting Telemetry via Task Notifiers: Notifies registered
+monitoring systems, auditing subsystems, and performance tools (perf)
+that a fresh process or thread context has successfully completed its
+initialization phase [23.2].</p>
+</li>
+<li>
+<p>Resolving and Pinning the Child PID: Extracts the unique process
+identifier allocated to the newly generated task context [26.1].</p>
+</li>
+<li>
+<p>Processing Context-Return Synchronization Files: Handles the
+population and returned memory addresses for parent synchronization
+hooks, tracking arrays (parent_tid), and physical file descriptor
+handles (pidfd).</p>
+</li>
+<li>
+<p>Preparing vfork Completion Locks: If the configuration targets a vfork
+deployment topology, the routine calls init_completion() to arm an
+atomic completion lock (clearing an internal tracker bit and placing
+the calling parent task onto a low-power wait queue to await a
+signaling notification from the child).</p>
+</li>
+<li>
+<p>Awakening the Newly Formed Task Node: Dispatches the core scheduler
+interface wake_up_new_task() to switch the child task's status
+indicator and insert its descriptor straight into the active
+scheduling runqueues to commence real-time execution [17.3].</p>
+</li>
+<li>
+<p>Enforcing Parent Blocking Stalls under vfork Constraints: If a vfork
+lifecycle was requested, the parent execution path enters a
+synchronous stall, blocking securely until the child task fully
+releases the shared memory workspace via an execve() or _exit()
+transition.</p>
+</li>
+</ul>
+<p>The sub-routine copy_process() handles the literal duplication of the
+executing parent task's technical runtime context, crafting a clean
+struct task_struct envelope, evaluating the active clone flags to parse
+precisely which subsystems must be multiplexed locklessly versus
+segregated into isolated tracking domains, and appending the newly
+compiled node directly into the kernel's process tree matrix—leaving
+the thread un-awakened and parked on the runqueues. This extensive
+function is hosted within the process creation source tree file
+git/kernel/fork.c, executing across the following microarchitectural
+phases:</p>
+<ul>
+<li>
+<p>Auditing Complementary Clone Formats: Cross-checks and validates the
+structural combinations of the requested capability bits to prevent
+illegal systemic configurations.</p>
+</li>
+<li>
+<p>Allocating a Clean Task Struct Envelope: Carves out a fresh,
+unpopulated struct task_struct shell directly from the optimized
+lookaside slab cache object pool [26.6].</p>
+</li>
+<li>
+<p>Initializing Subsystem Tracking Metadata: Clears and primes the
+baseline tracking states unique to each core kernel architecture
+module inside the new task shell, setting up independent registers to
+support task scheduling, RCU thread synchronization, lock validation
+graphs, operational statistics compilation, control group tracking,
+and security auditing logs [17.3, 19.1, 28.4].</p>
+</li>
+<li>
+<p>Delegating Core Scheduling Allocation Bounds: Passes the newly formed
+task shell down to sched_fork() to initialize its baseline scheduling
+attributes, load-balancing metrics, and execution slice priorities
+[17.3].</p>
+</li>
+<li>
+<p>Processing Resource Replication and Sharing Vectors: Parses the clone
+flags to programmatically duplicate or share core subsystems across
+the boundary, which primarily encompasses:</p>
+<ul>
+<li>
+<p>Virtual Address Spaces: Handled via the function copy_mm() [26.7].</p>
+</li>
+<li>
+<p>Open File Descriptor Tables: Handled via the function copy_files()
+[27.6].</p>
+</li>
+<li>
+<p>Filesystem Namespace Root Maps: Handled via the function copy_fs()
+[27.6].</p>
+</li>
+<li>
+<p>Signal Handling Method Arrays: Handled via the function
+copy_sighand() [27.8].</p>
+</li>
+<li>
+<p>Multi-Dimensional Isolation Namespaces: Handled via the function
+copy_namespaces() [27.1, 28.2].</p>
+</li>
+<li>
+<p>Task Scheduling Parameters: Handled via the function sched_fork()
+[17.3].</p>
+</li>
+<li>
+<p>Process Identifier Descriptors: Handled via the function alloc_pid()
+[26.1].</p>
+</li>
+<li>
+<p>Kernel Execution Stacks and Core Context registers: Handled via the
+function copy_thread(). This critical pass writes the initial CPU
+register structures for the child task, resolving exactly what
+instruction pointer address the CPU core must branch to the absolute
+first time the scheduler selects the new task for execution.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Allocating PIDs and Mapping Hierarchical Thread Group Dependencies:
+Finalizes numeric identifier validation and establishes the
+bi-directional tracking arrays linking the task to its parent process
+group and thread group topologies [26.1].</p>
+</li>
+<li>
+<p>Committing the Completed Descriptor onto the Kernel Task Tree: Wire
+the initialized task node securely into the operating system's master
+active task lists.</p>
+</li>
+<li>
+<p>Returning the Formed Task Pointer: Returns the newly compiled struct
+task_struct pointer back to the parent execution thread.</p>
+</li>
+</ul>
+<p>At this precise milestone along the system bootstrap timeline, the core
+multi-core task scheduler stands fully operational, and the newly
+instantiated process node corresponding to the kernel_init thread has
+been successfully inserted into the runqueues and awakened, waiting for
+the scheduler to select it during an upcoming re-balancing sweep
+[17.3]. The absolute pipeline spanning from the execution of
+rest_init() through the creation of Process 1 up to the point where
+kernel_init() commences active tracking loops is illustrated in Figure
+30-1.</p>
+<center>
+<figure>
+<img src="./media/image156.png" style="width:50%;height:auto" />
+<figcaption>
+<p>
+Figure 30-1 Process 1 Generation, Initialization, and Active Execution
+Pipeline</p>
+</figcaption>
+</figure>
+</center>
+<p>Forging the microarchitectural CPU register state for a task's
+first-time execution—combined with standard kernel exception return
+transformations—is mandatory to guarantee that a newly generated task
+context complies with the kernel's native context-switching paradigms
+[17.3]. Once Process 1 commences processing its primary execution
+threads, the remainder of the core initialization tasks required to
+transition the operating system into a fully operational "boot
+completed" state are managed asynchronously under the jurisdiction of
+the kernel_init thread context.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="chapter_30.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="30.2 Transitioning to User Space.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="chapter_30.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="30.2 Transitioning to User Space.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

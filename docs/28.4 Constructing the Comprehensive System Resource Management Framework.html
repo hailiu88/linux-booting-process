@@ -1,0 +1,704 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Constructing the Comprehensive System Resource Management Framework - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/28.4 Constructing the Comprehensive System Resource Management Framework.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="284-constructing-the-comprehensive-system-resource-management-framework"><a class="header" href="#284-constructing-the-comprehensive-system-resource-management-framework">28.4 Constructing the Comprehensive System Resource Management Framework</a></h2>
+<p>The baseline concepts governing Control Groups (cgroups) have been
+examined across preceding analyses detailing their early-stage
+infrastructure [17.3]. Within the Linux kernel bootstrap pipeline, the
+cgroup initialization process is partitioned across two distinct
+execution phases: the early phase (cgroup_init_early()) and the late
+phase (cgroup_init()). The defining technical discrepancy between them
+resides in their explicit execution checkpoints and absolute
+configuration depth. The structural purpose of early initialization is
+to bind critical, high-priority resource subsystems (such as cpuset)
+onto the primary bootstrap process contexts (PID 0 and PID 1) as early
+as possible [26.6, 28.3].</p>
+<p>Conversely, cgroup_init() is executed during the late phase of the
+system boot sequence, a checkpoint where virtual memory management
+structures, multi-core page allocators, and the Virtual Filesystem (VFS)
+are fully online and ready [24.3, 27.6]. Its primary technical
+responsibility is to handle the complete initialization of all residual
+resource subsystems, mount the standard filesystem interfaces, register
+the cgroup virtual filesystems into the core VFS registries, create the
+explicit /sys/fs/cgroup mount points, initialize the global lookup hash
+tables, and expose the administrative tracking nodes at /proc/cgroups
+and /proc/[pid]/cgroup [27.6, 28.1]. The function is hosted within
+the control groups core source tree file git/kernel/cgroup/cgroup.c, and
+its definition is implemented as follows:</p>
+<pre><code>int __init cgroup_init(void)
+{
+	struct cgroup_subsys *ss;
+	int ssid;
+	BUILD_BUG_ON(CGROUP_SUBSYS_COUNT &gt; 16);
+	BUG_ON(cgroup_init_cftypes(NULL, cgroup_base_files));
+	BUG_ON(cgroup_init_cftypes(NULL, cgroup1_base_files));
+	cgroup_rstat_boot();
+	rcu_sync_enter_start(&amp;cgroup_threadgroup_rwsem.rss);
+	get_user_ns(init_cgroup_ns.user_ns);
+	mutex_lock(&amp;cgroup_mutex);
+	hash_add(css_set_table, &amp;init_css_set.hlist, css_set_hash(init_css_set.subsys));
+	BUG_ON(cgroup_setup_root(&amp;cgrp_dfl_root, 0));
+	mutex_unlock(&amp;cgroup_mutex);
+	for_each_subsys(ss, ssid) {
+		if (ss-&gt;early_init) {
+			struct cgroup_subsys_state *css = init_css_set.subsys[ss-&gt;id];
+			css-&gt;id = cgroup_idr_alloc(&amp;ss-&gt;css_idr, css, 1, 2, GFP_KERNEL);
+			BUG_ON(css-&gt;id &lt; 0);
+		} else {
+			cgroup_init_subsys(ss, false);
+		}
+		list_add_tail(&amp;init_css_set.e_cset_node[ssid], &amp;cgrp_dfl_root.cgrp.e_csets[ssid]);
+		if (cgroup_disable_mask &amp; (1 &lt;&lt; ssid)) {
+			static_branch_disable(cgroup_subsys_enabled_key[ssid]);
+			printk(KERN_INFO "Disabling %s control group subsystem\n", ss-&gt;name);
+			continue;
+		}
+		if (cgroup1_ssid_disabled(ssid))
+			printk(KERN_INFO "Disabling %s control group subsystem in v1
+ mounts\n", ss-&gt;name);
+		cgrp_dfl_root.subsys_mask |= 1 &lt;&lt; ss-&gt;id;
+		WARN_ON(ss-&gt;implicit_on_dfl &amp;&amp; !ss-&gt;threaded);
+		if (ss-&gt;implicit_on_dfl)
+			cgrp_dfl_implicit_ss_mask |= 1 &lt;&lt; ss-&gt;id;
+		else if (!ss-&gt;dfl_cftypes)
+			cgrp_dfl_inhibit_ss_mask |= 1 &lt;&lt; ss-&gt;id;
+		if (ss-&gt;threaded)
+			cgrp_dfl_threaded_ss_mask |= 1 &lt;&lt; ss-&gt;id;
+		if (ss-&gt;dfl_cftypes == ss-&gt;legacy_cftypes) {
+			WARN_ON(cgroup_add_cftypes(ss, ss-&gt;dfl_cftypes));
+		} else {
+			WARN_ON(cgroup_add_dfl_cftypes(ss, ss-&gt;dfl_cftypes));
+			WARN_ON(cgroup_add_legacy_cftypes(ss, ss-&gt;legacy_cftypes));
+		}
+		if (ss-&gt;bind)
+			ss-&gt;bind(init_css_set.subsys[ssid]);
+		mutex_lock(&amp;cgroup_mutex);
+		css_populate_dir(init_css_set.subsys[ssid]);
+		mutex_unlock(&amp;cgroup_mutex);
+	}
+	hash_del(&amp;init_css_set.hlist);
+	hash_add(css_set_table, &amp;init_css_set.hlist,  css_set_hash(init_css_set.subsys));
+	WARN_ON(sysfs_create_mount_point(fs_kobj, "cgroup"));
+	WARN_ON(register_filesystem(&amp;cgroup_fs_type));
+	WARN_ON(register_filesystem(&amp;cgroup2_fs_type));
+	WARN_ON(!proc_create_single("cgroups", 0, NULL, proc_cgroupstats_show));
+#ifdef CONFIG_CPUSETS
+	WARN_ON(register_filesystem(&amp;cpuset_fs_type));
+#endif
+	return 0;
+}
+</code></pre>
+<p>This segments charts the logical execution flow of the control groups
+initialization routine cgroup_init() during system boot. In summary,
+this function achieves the following core operations:</p>
+<ul>
+<li>
+<p>Assembling the Baseline Environment:</p>
+<ul>
+<li>
+<p>Leverages BUILD_BUG_ON to assert that the aggregate subsystem count
+does not breach the 16-controller threshold barrier.</p>
+</li>
+<li>
+<p>Dispatches cgroup_init_cftypes to register the control group's core
+unified interface files (such as cgroup.procs, etc.).</p>
+</li>
+<li>
+<p>Spins up the centralized resource statistics (rstat) mechanism and
+initializes the read-write semaphore consumed during thread group
+synchronization.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Initializing Core Data Structures:</p>
+<ul>
+<li>
+<p>Fetches the validation credentials and reference counter for the
+initial cgroup namespace's parent user namespace.</p>
+</li>
+<li>
+<p>Invokes cgroup_setup_root() to build the default root hierarchy tree
+of the control groups subsystem (the standard v2 unified root
+layout, cgrp_dfl_root).</p>
+</li>
+<li>
+<p>Appends the initial control group subsystem state matrix
+(init_css_set, which encapsulates the operational states of all
+boot-phase processes) straight into the global lookup hash table
+(css_set_table).</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Iterating and Activating Individual Subsystems:</p>
+<ul>
+<li>
+<p>If a specific subsystem was already bootstrapped during the early
+boot phase, the engine allocates its dynamic ID; otherwise, it calls
+cgroup_init_subsys to execute a complete configuration sweep.</p>
+</li>
+<li>
+<p>Audits the kernel boot command-line arguments; if an administrator
+explicitly passed a flag to disable a controller, the routine
+deactivates its static key and steps over its block.</p>
+</li>
+<li>
+<p>Evaluates the structural traits of each subsystem to determine
+whether it should be mapped onto a legacy v1 container versus the
+default v2 unified root, programming the tracking bitmasks
+accordingly.</p>
+</li>
+<li>
+<p>Appends subsystem-specific control definition structures (cftypes)
+onto the filesystem architecture, exposing the concrete
+configuration knobs to user space under the directory path
+/sys/fs/cgroup.</p>
+</li>
+<li>
+<p>Dispatches the callback ss-&gt;bind to anchor each subsystem to the
+initial process matrix.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Exposing Interfaces to User Space:</p>
+<ul>
+<li>
+<p>Creates the physical mount point directory for cgroup under the
+sysfs framework at /sys/fs/cgroup.</p>
+</li>
+<li>
+<p>Formally registers both the cgroup (v1) and cgroup2 virtual
+filesystem types into the core VFS driver repositories.</p>
+</li>
+<li>
+<p>Instantiates the virtual file /proc/cgroups to allow user-space
+administrative utilities to audit precisely which subsystems are
+natively supported by the running kernel.</p>
+</li>
+</ul>
+</li>
+</ul>
+<p>The function first executes a compile-time static safety assertion via
+BUILD_BUG_ON(CGROUP_SUBSYS_COUNT &gt; 16) to guarantee that the absolute
+volume of concurrent subsystems does not overshoot 16 [17.3]. This
+rigid threshold is mandatory because the core kernel utilizes a
+streamlined 16-bit tracking bitmap to monitor and audit the status of
+active subsystem controllers; allowing more than 16 controllers to be
+compiled into the image would cause the bitmask tracking logic to fail.</p>
+<p>The routine leverages cgroup_init_cftypes() to initialize the generic
+baseline interface files that reside uniformly within all cgroup
+directories regardless of which specific controller owns the node,
+including creating the unified tracking files cgroup.procs,
+cgroup.threads, cgroup.subtree_control, cgroup.controllers, and
+notify_on_release. It alternative dispatches cgroup_init_cftypes() to
+populate the legacy v1 control group base interfaces. These interface
+files are modeled inside the kernel via the struct cftype configuration
+descriptor. The cftype structure defines the layout parameters of the
+virtual control files to be dynamically generated under the subsystem
+directory tree, anchoring their respective .read and .write callback
+handler operations. In short, it instructs the control groups framework
+precisely what virtual files to map out, what text names to assign them,
+what access permissions to enforce, and which internal kernel functions
+to call whenever a user application triggers a read or write transaction
+against the node.</p>
+<p>The invocation of cgroup_rstat_boot() initializes the unified resource
+statistics framework. This infrastructure serves as the foundational,
+low-level execution engine consumed by control groups to handle
+multi-tiered resource telemetry aggregation—such as calculating
+process memory saturation metrics or compiling historical CPU
+utilization metrics [25.3, 28.3]. These telemetry data streams are
+systematically aggregated upward layer-by-layer throughout the tree
+hierarchy; conceptually, this routine functions as the master power
+switch activating the entire statistics subsystem.</p>
+<p>The call rcu_sync_enter_start() forcefully drives explicit cgroup read
+paths to commence operations inside a slow-path synchronization mode
+right from the start [19.1]. This strategic configuration avoids the
+high processing latencies and pipelines stalls that would otherwise
+occur if the subsystem frequently dispatched synchronous
+synchronize_rcu() operations at a later stage. Because synchronize_rcu()
+introduces excessive temporal overhead within the control groups core,
+the engine prefers to route lookup paths down the un-optimized slow
+track initially. The cgroup architecture represents a highly dynamic
+environment characterized by frequent subsystem lookups, high-frequency
+task migrations across nodes, and continuous runtime hierarchy updates;
+forcing the system to block and wait out a comprehensive RCU grace
+period every time an internal read/write operational tracking state
+toggled would heavily compromise initialization velocities and system
+responsiveness [19.1, 21.3].</p>
+<p>The utility get_user_ns() increments the object reference counter
+belonging to the parent user namespace (user_ns) that owns the initial
+cgroup namespace context [26.6, 27.1]. This tracking safeguard
+guarantees that the foundational user namespace context supporting
+init_cgroup_ns remains strictly anchored in memory and immune to
+premature deallocation loops, illustrating a widely utilized object
+lifecycle management paradigm integrated across the Linux kernel
+codebase (where pairs of matching get() and put() API loops are
+extensively deployed to govern object persistence).</p>
+<p>Upon capturing the global control group mutex lock, the routine
+dispatches hash_add() to append the list head node address of the
+initial subsystem state matrix (init_css_set.hlist) into the primary
+tracking hash table css_set_table, calculating the target hash bucket
+index by passing the controller array through the transformation helper
+css_set_hash().</p>
+<p>css_set_table is a high-performance global hash table deployed to index
+all active control group subsystem state combinations (struct css_set).
+Its technical purpose is to rapidly resolve an existing compiled state
+matrix based on the base address of an inbound array of CSS pointers,
+serving as a critical acceleration structure when task threads
+dynamically join or migrate across control groups. The acronym CSS
+expands to define the Cgroup Subsystem State (struct
+cgroup_subsys_state), which acts as the definitive data structure
+archiving the runtime execution state and parameters of an individual
+controller node bound to a specific cgroup junction. Concurrently, the
+css_set structure models the collective matrix of all controller states
+associated with a single process context (or a grouped block of parallel
+tasks). Because an individual process thread is authorized to
+simultaneously hold membership across completely separate control
+groups—for instance, a task can be restricted by a specific memory
+cgroup, governed by an independent CPU cgroup, and throttled by a
+separate pids cgroup—the unique combination of distinct CSS
+descriptors tracking these states are consolidated together to form a
+singular css_set fingerprint.</p>
+<p>The initial subsystem state matrix (init_css_set) represents a global
+baseline configuration compiled during early boot, mapping out the
+default control group states allocated to the system's absolute first
+tracking tasks.</p>
+<p>The function cgroup_setup_root() instantiates the default root container
+node cgrp_dfl_root anchoring the unified control group hierarchy tree,
+structuring the node via the struct cgroup_root descriptor block. The
+cgroup_root structure archives the critical metadata used to manage and
+navigate a control group hierarchy tree, encapsulating metrics including
+the string name assigned to the architecture tree, the specific cgroup
+node it represents, the unique hierarchy identification integer (ID),
+the aggregate volume of cgroups currently tracking along the tree
+branches, the bitmask mask mapping out the compiled subsystems attached
+to the hierarchy, and a file pointer targeting the root directory of the
+corresponding kernel virtual filesystem. It acts as the definitive core
+orchestrating cgroup tree management.</p>
+<p>From the architectural perspective of the kernel's virtual filesystem
+layers, invoking cgroup_setup_root() constructs the underlying virtual
+framework that maps the cgroup root path /sys/fs/cgroup in memory,
+establishing this root container as the definitive origin point for the
+entire cgroup v2 unified tree hierarchy [27.6]. The operational
+milestones successfully fulfilled by cgroup_setup_root() primarily
+encompass:</p>
+<ul>
+<li>
+<p>Initializing the Reference Counters for the Target Control Group:<br>This usage counter tracks and determines whether all dependent
+resources are correctly released before the root node is destroyed.</p>
+</li>
+<li>
+<p>Initializing the Filesystem Root Inode and kernfs Nodes:<br>The core kernel hierarchy of a cgroup is organized via kernfs nodes,
+which are dynamically mapped to construct the file directory tree
+structures and corresponding VFS inodes mounted at /sys/fs/cgroup
+[27.6].</p>
+</li>
+<li>
+<p>Subsystem Re-binding:<br>Guided by the passed subsystem mask (ss_mask), specified controllers
+(such as CPU, I/O, etc.) are unlinked from their legacy tracking
+hierarchies and re-bound under this newly instantiated root layer.</p>
+</li>
+<li>
+<p>Appending the Default Root Node (cgrp_dfl_root) into the Global Kernel
+List cgroup_roots and Incrementing the Global Counter
+cgroup_root_count:<br>This establishes the baseline "process-to-hierarchy" mapping
+architecture (link_css_set).</p>
+</li>
+<li>
+<p>Traversing All css_set Instances Referenced by Pointers inside the
+css_set_table:<br>Utilizing a specialized linked list of type struct cgrp_cset_link, the
+routine constructs a bi-directional lookup mapping bridging the
+control group associated with the default root node
+(cgrp_dfl_root.cgrp) to each traversed css_set.</p>
+</li>
+</ul>
+<p>Within the Linux kernel, the cgrp_cset_link structure acts as a critical
+intermediary connector deployed to manage the complex many-to-many (M:N)
+mapping relationships that bridge cgroups with css_set matrices. In a
+control group architecture, a single css_set can simultaneously
+associate with multiple distinct cgroups belonging to completely
+separate hierarchies; conversely, a single discrete cgroup can tie into
+multiple separate css_set frames (because different tasks running inside
+that single cgroup can independent hold memberships in alternate
+hierarchies).</p>
+<p>Acting as the connective hub, cgrp_cset_link splices the two worlds
+together, empowering the kernel to execute high-efficiency traversals
+starting from either end of the mapping.</p>
+<p>The structural tracking layout of struct cgrp_cset_link is defined as
+follows:</p>
+<pre><code>struct cgrp_cset_link {
+    struct cgroup       *cgrp;
+    struct css_set      *cset;
+    struct list_head    cset_link;
+    struct list_head    cgrp_link;
+};
+</code></pre>
+<p>Within this configuration block, the cgrp and cset pointers reference
+the literal target control group object and CSS collection instance,
+respectively. The cset_link head member chains the active cgrp_cset_link
+node directly into the .cset_links master tracking array managed inside
+the target cgroup structure, enabling the kernel to instantly audit
+precisely which css_set entities are actively consuming that specific
+cgroup. Concurrently, the cgrp_link member hooks the current link
+structure straight into the .cgrp_links registry array managed inside
+the target css_set structure, allowing the kernel to take a single
+designated css_set and instantly resolve every control group it maps to
+across all available tracking hierarchies. The complex topological
+inter-relationships bridging distinct cgroups, localized subsystem state
+sets (tasks), and the connecting cgrp_cset_link nodes are illustrated in
+Figure 28-1.</p>
+<center>
+<figure>
+<img src="./media/image155.png" style="width:90%;height:auto" />
+<figcaption>
+<p>
+Figure 28-1 Architectural Relationships Between Control Groups,
+Subsystem State Sets (Tasks), and cgrp_cset_link Intermediaries</p>
+</figcaption>
+</figure>
+</center>
+<p>The macro loop helper for_each_subsys() is leveraged to traverse every
+available control group subsystem (controller) configured across the
+system. The exact programmatic operations executed within this loop
+block have been parsed in exhaustive detail across the preceding
+sections and are omitted here to avoid redundancy.</p>
+<p>Because the master default control group subsystem state set undergoes
+dynamic updates and modifications inside this loop framework,
+cgroup_init() dispatches hash_del() to temporarily extract the default
+subsystem state node from its early un-optimized queue slots,
+subsequently recalculating its hash index relative to the newly bound
+subsystem states to securely re-hash and commit the entry back into the
+global css_set_table.</p>
+<p>The function sysfs_create_mount_point() carves out the designated sysfs
+mount point, constructing a physical directory container named cgroup
+under the parent pathway /sys/fs/. This directory functions as the
+central home base anchoring all subsequent cgroup hierarchical mounting
+frameworks [27.6].</p>
+<p>Following the creation of this mount point, the routine calls
+register_filesystem() to formally register the cgroup (v1) and cgroup2
+(v2) virtual filesystem formats into the VFS core registries [27.6].
+Completing this registration milestone is a strict prerequisite before
+user-space orchestration tools can successfully execute formatting
+commands like mount -t cgroup ... or mount -t cgroup2 .…</p>
+<p>The function proc_create_single() instantiates the virtual path node
+/proc/cgroups and registers the output formatting handler callback
+proc_cgroupstats_show() with the core procfs subsystem [28.1]. This
+setup guarantees that whenever a user-space utility executes an
+analytical trace like cat /proc/cgroups, the kernel dynamically hooks
+the event to compile and display the active subsystem statistics on the
+fly.</p>
+<p>Finally, if the kernel image is compiled with explicit control set
+support enabled via CONFIG_CPUSETS, the routine triggers an auxiliary
+execution path to register the specialized cpuset virtual filesystem
+type, which handles isolated multi-core CPU and memory node allocations
+[28.3].</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="28.3 Initializing the cpuset Mechanism.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="chapter_29.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="28.3 Initializing the cpuset Mechanism.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="chapter_29.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

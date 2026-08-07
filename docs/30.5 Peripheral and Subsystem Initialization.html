@@ -1,0 +1,955 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Peripheral and Subsystem Initialization - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/30.5 Peripheral and Subsystem Initialization.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="305-peripheral-and-subsystem-initialization"><a class="header" href="#305-peripheral-and-subsystem-initialization">30.5 Peripheral and Subsystem Initialization</a></h2>
+<p>The routine do_initcalls() executes every single compiled initialization
+task bounded between the linker symbols __initcall0_start and
+__initcall_end. This massive execution sweep orchestrates core
+subsystem configurations, architecture-dependent hardware setups,
+peripheral module probing, device driver processing loops, and
+filesystem instantiation passes. The function is hosted within the
+central kernel initialization tree file git/init/main.c, and its
+definition is implemented as follows:</p>
+<pre><code>static void __init do_initcalls(void)
+{
+	int level;
+	size_t len = strlen(saved_command_line) + 1;
+	char *command_line;
+	command_line = kzalloc(len, GFP_KERNEL);
+	if (!command_line)
+		panic("%s: Failed to allocate %zu bytes\n", __func__, len);
+	for (level = 0; level &lt; ARRAY_SIZE(initcall_levels) - 1; level++) {
+		strcpy(command_line, saved_command_line);
+		do_initcall_level(level, command_line);
+	}
+	kfree(command_line);
+}
+</code></pre>
+<p>Commencing seamlessly from Level 0, this function loops to dispatch
+do_initcall_level(), systematically processing the initialization
+handlers bundled within each respective level's memory segment.
+Immediately preceding the execution of each target level, the routine
+copies the system's pristine command-line parameters archived inside
+saved_command_line over to a temporary buffer workspace, command_line.</p>
+<p>Extensive kernel subsystems and peripheral hardware drivers authorize
+dynamic adjustments via these boot parameters. During the execution of
+do_initcall_level(), the parsing core sweeps the command line to isolate
+and apply the arguments corresponding to the modules compiled within the
+active priority level. Low-level argument parsing functions (such as
+parse_args) execute destructive string mutations directly inside the
+passed text buffer—routinely overriding whitespace characters or
+delimiters with a null terminator (\0) to tokenize the key-value
+options. Because the source buffer undergoes destructive modification
+during each parsing run, the routine must invoke strcpy() to completely
+re-overwrite the workspace with the original saved_command_line payload
+before entering the subsequent priority level, mathematically proving
+that drivers executing across later stages receive an uncorrupted,
+intact set of boot options.</p>
+<p>The companion handler do_initcall_level() is alternative hosted within
+git/init/main.c, and its definition is implemented as follows:</p>
+<pre><code>static void __init do_initcall_level(int level, char *command_line)
+{
+	initcall_entry_t *fn;
+	parse_args(initcall_level_names[level],  command_line, __start___param,
+	   __stop___param - __start___param,  level, level, NULL, ignore_unknown_bootoption);
+	trace_initcall_level(initcall_level_names[level]);
+	for (fn = initcall_levels[level]; fn &lt; initcall_levels[level+1]; fn++)
+		do_one_initcall(initcall_from_entry(fn));
+}
+</code></pre>
+<p>Prior to running the initialization handlers within a given tier, the
+function dispatches parse_args() to execute targeted, level-specific
+parameter decoding. Within this parsing interface, the array cell
+initcall_level_names[level] supplies the literal string text name
+identifying the active priority level (the operation or subsystem class
+name), facilitating diagnostic tracking to clarify precisely which
+module context is evaluating the parameters. This name matrix is defined
+as follows:</p>
+<pre><code>static const char *initcall_level_names[] __initdata = {
+	"pure",
+	"core",
+	"postcore",
+	"arch",
+	"subsys",
+	"fs",
+	"device",
+	"late",
+};
+</code></pre>
+<p>The command_line buffer argument holds the raw, unparsed boot option
+text string (such as console=ttyS0 quiet). The parsing core tokenizes
+this string in place, swapping space characters or equality operators
+with null bytes (\0) to isolate the discrete configuration pairs.</p>
+<p>The external tracking symbols __start___param and
+__stop___param are generated automatically by the linker toolchain
+during binary compilation. They define the absolute microarchitectural
+boundaries bounding the memory section within the kernel image dedicated
+to storing the system's parameter descriptors. Within the kernel source
+tree, whenever a developer registers a configuration parameter utilizing
+macros like module_param(), core_param(), or early_param(), the compiler
+leverages the compilation attribute
+__attribute__((section("__param"))) to force-pack the compiled
+parameter metadata straight into this specialized segment.</p>
+<p>The mathematical calculation __stop___param - __start___param
+derives the total aggregate element count packed inside this parameter
+array. The level parameter provides granular filtering during the
+decoding sweep, restricting parse_args() to process exclusively the
+parameter subsets explicitly registered to match the active level index.
+This boundary check guarantees that throughout a specific initialization
+window, only the configuration arguments relevant to that exact phase
+undergo execution. The argument ignore_unknown_bootoption serves as a
+registered callback handler; as its nomenclature indicates, it instructs
+parse_args() to bypass and ignore unknown or non-matching boot options.</p>
+<p>By invoking parse_args(), the do_initcall_level() routine isolates and
+activates exclusively the internal kernel parameters associated with the
+active priority tier (the parameters instantiated via module_param or
+__setup macros). Passing down the refreshed command_line ensures that
+the configuration overrides requested by the administrator during system
+boot (such as setting up the serial terminal via console=ttyS0) are
+safely bound to their target subsystems right before those subsystems
+activate.</p>
+<p>Driven by a standard for loop, do_initcall_level() walks the compiled
+function pointer array starting from the baseline memory address of the
+current level up to the boundary symbol of the subsequent tier, ensuring
+that every single initialization callback compiled within that explicit
+level undergoes sequential evaluation.</p>
+<p>The control grid initcall_levels[level] represents a static pointer
+matrix where each array slot references a specific physical memory
+coordinate situated between the master symbols __initcall_start and
+__initcall_end. Each cell identifies the absolute address of the
+primary initialization handler anchoring that respective level. This
+array configuration is alternative defined within the core source tracks
+of git/init/main.c as follows:</p>
+<pre><code>static initcall_entry_t *initcall_levels[] __initdata = {
+	__initcall0_start,
+	__initcall1_start,
+	__initcall2_start,
+	__initcall3_start,
+	__initcall4_start,
+	__initcall5_start,
+	__initcall6_start,
+	__initcall7_start,
+	__initcall_end,
+};
+</code></pre>
+<p>The do_one_initcall() function nested inside the looping structure
+formally triggers the execution of each target initialization function.
+This is the definitive location where initialization occurs, driving the
+kernel to branch execution directly over to the routine referenced by
+the fn callback tracker.</p>
+<p>By integrating trace_initcall_level(), the do_initcall_level() routine
+empowers internal kernel debugging frameworks (such as ftrace or
+user-space utilities like bootgraph.pl) to seamlessly capture and record
+the exact start and completion timestamps of each priority level,
+generating intuitive system boot timeline graphics.</p>
+<p>Having examined how the engine loops through each priority level, the
+analysis below details how an individual initialization function is
+processed internally by breaking down the microarchitectural behavior of
+do_one_initcall().</p>
+<p>The function do_one_initcall() is hosted within the central kernel
+initialization tree file git/init/main.c, and its definition is
+implemented as follows:</p>
+<pre><code>int __init_or_module do_one_initcall(initcall_t fn)
+{
+	int count = preempt_count();
+	char msgbuf[64];
+	int ret;
+	if (initcall_blacklisted(fn))
+		return -EPERM;
+	do_trace_initcall_start(fn);
+	ret = fn();
+	do_trace_initcall_finish(fn, ret);
+	msgbuf[0] = 0;
+	if (preempt_count() != count) {
+		sprintf(msgbuf, "preemption imbalance ");
+		preempt_count_set(count);
+	}
+	if (irqs_disabled()) {
+		strlcat(msgbuf, "disabled interrupts ", sizeof(msgbuf));
+		local_irq_enable();
+	}
+	WARN(msgbuf[0], "initcall %pS returned with %s\n", fn, msgbuf);
+	add_latent_entropy();
+	return ret;
+}
+</code></pre>
+<p>Immediately preceding execution, the function cross-checks whether the
+target initialization callback has been explicitly disabled by the
+administrator via the initcall_blacklist= boot parameter. This check is
+incredibly useful during debugging passes to bypass and isolate
+misbehaving or corrupted hardware drivers that would otherwise trigger a
+fatal crash during boot. If the function is not blacklisted, the engine
+activates the initcall trace trackers, dispatches the handler callback
+to execute the hardware initialization, and subsequently stops the trace
+trackers, capturing the precise temporal duration consumed by that
+explicit module setup routine.</p>
+<p>The kernel records the absolute preemption count value via
+preempt_count() before executing the callback. If the routine alters the
+preemption balance upon winding down—for instance, if a driver
+developer invokes a preempt_disable() tracking primitive but completely
+omits the matching preempt_enable() cleanup call—the kernel forcefully
+overrides the corruption to reset the count back to its original value
+and raises an explicit error. Without this defensive override, the
+operating system could enter a state where task preemption is
+permanently blocked, freezing the scheduling core and locking up the
+machine [17.3].</p>
+<p>Similarly, if an errant initialization function disables local CPU
+interrupts and terminates without re-enabling them, the kernel
+aggressively executes a recovery path via local_irq_enable() to reopen
+the interrupt channels and logs a critical system warning [24.2].
+Allowing local interrupts to remain blocked would permanently blind the
+CPU core to physical timer event crystals and peripheral device
+exceptions, causing the system to lock up.</p>
+<p>Upon the conclusion of each individual initialization function, the
+engine dispatches add_latent_entropy(). This call evaluates the slight
+microsecond-scale timing variances and scheduling states resulting from
+that function's execution path to inject fresh non-deterministic data
+blocks straight into the system's primary input pool, continuously
+strengthening the unpredictability of the random number generator
+[22.3].</p>
+<p>The do_basic_setup() framework serves as the definitive
+microarchitectural boundary separating the phase where the kernel
+initializes its own internal subsystems from the phase where it
+initializes external peripheral hardware devices. Upon its clean
+termination, the kernel stands fully prepared to search out the physical
+storage disk to launch the primary user-space initialization executable
+at /sbin/init, hand-shaking control over to user space [26.6, 28.1,
+30.2].</p>
+<p>Following the execution of this massive initcall priority sequencing
+grid, kernel_init_freeable() dispatches kunit_run_all_tests() to process
+the comprehensive suite of internal kernel testing code. The KUnit
+architecture is a lightweight, unit-testing framework built natively
+inside the Linux kernel space. Heavily inspired by user-space paradigms
+like JUnit, Python's unittest, and GoogleTest, this testing core
+empowers kernel developers to compile and execute white-box validation
+routines directly inside the kernel context, targeting core functions
+managing virtual filesystems, peripheral device drivers, or memory
+structures.</p>
+<p>Because these validation modules execute natively as a component of the
+privileged kernel image, they retain full structural access to internal,
+non-exported helper routines and hidden symbols that are alternative
+locked down and shielded from standard dynamic kernel modules (functions
+not exported via the EXPORT_SYMBOL macro family). By pairing the
+framework with the kunit_tool utility and User-Mode Linux (UML),
+developers can compile the entire operating system image down into a
+standard user-space executable, running dozens of white-box tests on a
+host development machine within a few split-seconds. KUnit tests can be
+configured to run automatically as built-in routines during the system
+boot sequence, or compiled as modular units that trigger their test
+passes the moment the driver module is dynamically inserted into the
+running kernel. The finalized test results are formatted and exported
+using the standardized KTAP (Kernel Test Anything Protocol) syntax,
+making the output exceptionally easy to parse via automated user-space
+diagnostic scripts or continuous integration (CI) automation pipelines.</p>
+<p>This unit testing architecture organizes its validation passes by
+leveraging three primary data structures: the test suite container
+(struct kunit_suite), the test case descriptor (struct kunit_case), and
+the active test runtime context tracker (struct kunit). The test suite
+represents the primary organizational block within the KUnit framework,
+bundling together a cluster of related testing vectors that share common
+setup traits or target an identical subsystem. It orchestrates their
+collective execution and maps out the shared pre-test initialization
+callbacks alongside post-test cleanup handlers. The test case structure
+defines an individual validation function alongside its unique text name
+identifier, providing the structural canvas where developers write their
+explicit verification loops. The test context tracking object manages
+real-time metadata archiving the active status of the running test; it
+is driven entirely by the KUnit core engine, providing developers with a
+valid context to provision private tracking data or execute defensive
+validation checks. The following implementation snippet demonstrates how
+to compile and register a custom test suite using KUnit macros, where
+my_test_case_1() serves as the concrete validation target:</p>
+<pre><code>/* 1. Define the concrete unit test case function */
+static void my_test_case_1(struct kunit *test) {
+    KUNIT_EXPECT_EQ(test, 1 + 1, 2); 		// Assertion helper macro verifying that 1 + 1 equals 2
+}
+/* 2. Assemble the test cases into a structural array */
+static struct kunit_case my_test_cases[] = {
+    KUNIT_CASE(my_test_case_1),		// Maps .run_case = my_test_case_1 and .name = "my_test_case_1"
+    {} 							// The tracking array must terminate with an empty structure stub
+};
+/* 3. Define the parent test suite container */
+static struct kunit_suite my_test_suite = {
+    .name = "my_subsystem_test_suite",
+    .test_cases = my_test_cases,
+};
+/* 4. Register the completed suite with the KUnit core */
+kunit_test_suite(my_test_suite);
+</code></pre>
+<p>The routine kunit_run_all_tests() operates as the central initialization
+and dispatch hub for the kernel's unit testing framework during boot.
+It first dispatches kunit_print_tap_header() to stream out standard Test
+Anything Protocol (TAP) header blocks onto the log infrastructure. This
+standardized formatting ensures that external automation scripts can
+seamlessly decode the incoming diagnostic results piped across the
+system's serial console [24.1].</p>
+<p>Following this header transmission, kunit_run_all_tests() executes a
+systematic traversal across the compiled test suite structures bounded
+globally between the compiler symbols __kunit_suites_start and
+__kunit_suites_end. Inside this traversal loop, it passes each
+discovered suite descriptor down to the internal handler
+__kunit_test_suites_init() to process its testing vectors. The
+concrete testing sequence executed during this pass includes:</p>
+<ul>
+<li>
+<p>Suite Initialization via kunit_init_suite():<br>Initializes runtime assets and sets execution status flags for the
+target test suite. This phase constructs a dedicated debugfs
+interaction gateway, carving out an independent directory named after
+the test suite under the tracking path /sys/kernel/debug/kunit/.
+Through these virtual files, automated testing systems or human
+operators can directly inspect test outcomes or programmatically
+trigger a rerun of the test suite while the system remains live.</p>
+</li>
+<li>
+<p>Executing the Validation Suite via kunit_run_tests():<br>Formally dispatches all compiled test cases packed within the suite
+and records their completion metrics. The core operational steps
+processed within this execution block encompass:</p>
+<ul>
+<li>
+<p>Emitting the Subtest Header: Calls kunit_print_subtest_start() to
+stream compliant KTAP protocol header logs out to the system console
+or the main dmesg buffer, documenting the unique name of the test
+suite alongside the total volume of test cases scheduled for
+execution.</p>
+</li>
+<li>
+<p>Traversing the Test Matrix: Deploys the loop macro helper
+kunit_suite_for_each_test_case() to systematically walk every
+individual test case contained within the suite. Inside this loop,
+the helper function kunit_run_case_catch_errors() sequentially
+triggers the test suite's private setup function (.init), the core
+test case validation routine (.run_case), and the suite's cleanup
+function (.exit). Crucially, rather than executing the test callback
+directly along the naked stack, the framework encapsulates the
+invocation within an exception-catching abstraction sandbox to
+cleanly handle unhandled errors or kernel faults without
+destabilizing the broader bootstrap process.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Emitting Suite Summaries:<br>Outputs a consolidated results block detailing the terminal status
+(PASSED or FAILED) of the entire suite.</p>
+</li>
+</ul>
+<p>During the compilation and linking phase, every test suite pointer
+instantiated via the kunit_test_suite() macro family is collected by the
+toolchain and packed continuously into a dedicated ELF memory segment
+bounded globally by the symbols __kunit_suites_start and
+__kunit_suites_end.</p>
+<p>Upon the successful conclusion of the KUnit white-box testing pass, the
+routine kernel_init_freeable() dispatches console_on_rootfs() to
+allocate and wire standard input, standard output, and standard error
+file handles (stdin, stdout, stderr) for Process 1 (PID 1, the upcoming
+init thread context). The technical operations executed by
+console_on_rootfs() encompass:</p>
+<ul>
+<li>
+<p>Opening the Master Console via filp_open("/dev/console", O_RDWR, 0):
+Establishes an open session targeting the physical system console
+character device node. This path acts as a virtual device layer that
+the VFS core automatically routes to point to the definitive physical
+terminal hardware interface (such as a serial UART port or a graphics
+display device) resolved from the console= boot parameters [24.1,
+27.6].</p>
+</li>
+<li>
+<p>Defensive Error Auditing: If the file opening operation encounters a
+failure condition, it indicates that the kernel is completely blind to
+a valid interactive terminal device, prompting the system to emit a
+warning log. This anomaly traditionally signals that the rootfs image
+is missing the mandatory low-level device nodes under its /dev path,
+or the physical hardware device driver failed to load during the
+preceding stages.</p>
+</li>
+<li>
+<p>Multiplexing the File Object via init_dup(): The routine dispatches
+the file descriptor duplication helper init_dup() three times
+consecutively to replicate and reference the single unique struct file
+instance originally instantiated in memory by filp_open(). The first
+duplication pass claims File Descriptor 0 to back standard input
+(stdin), the secondary pass claims File Descriptor 1 to back standard
+output (stdout), and the final pass claims File Descriptor 2 to drive
+standard error (stderr). Consequently, this singular /dev/console file
+object tracks concurrently across three distinct functional file
+descriptors within the task's lookup array, remaining active
+throughout the entire operational lifecycle of the kernel image
+[27.6].</p>
+</li>
+</ul>
+<p>Because every downstream user-space process thread in Linux scales as a
+direct historical descendant of PID 1, every newly spawned user
+application automatically inherits these three pre-configured file
+descriptors by default:</p>
+<ul>
+<li>
+<p>0: Routes the thread to process incoming user input streams harvested
+from /dev/console (stdin).</p>
+</li>
+<li>
+<p>1: Routes the thread to pump standard text output payloads straight to
+/dev/console (stdout).</p>
+</li>
+<li>
+<p>2: Routes the thread to dump error logging and diagnostics payloads
+straight to /dev/console (stderr).</p>
+</li>
+</ul>
+<p>At this explicit junction along the system bootstrap timeline, the core
+initialization tasks are fundamentally finalized. Moving forward,
+kernel_init_freeable() dispatches init_eaccess() to audit whether the
+file path compiled within the global string variable
+ramdisk_execute_command physically resides within memory, confirming
+whether the system incorporates an early user-space ramdisk
+(initramfs/initrd) setup script.</p>
+<p>The variable ramdisk_execute_command represents a global kernel string
+tracking pointer that archives the exact file path of the absolute first
+user-space binary application to be launched the moment the kernel
+mounts the initial RAM disk. Once the operating system completes its
+baseline subsystem configurations and finishes extracting the compressed
+ramdisk image into the temporary rootfs boundary, it must hand off
+execution control to an unprivileged task context to orchestrate
+late-stage device configurations (such as inserting custom driver
+modules or mounting the definitive primary physical storage partition)
+[25.2]. This variable preserves that targeted program path, defaulting
+standard to evaluate as "/init", though it can be dynamically
+overridden by the administrator at boot time via the rdinit=
+command-line flag. For example, passing the command-line override
+rdinit=/bin/sh instructs the kernel's execution core to bypass the
+standard initialization scripts to drop control straight into a
+bare-metal interactive shell prompt.</p>
+<p>If the file path referenced by ramdisk_execute_command validates as
+present in the ramdisk memory tree, the kernel invokes
+run_init_process() to launch the application. If this preliminary
+process triggers an execution fault or the target file node is absent
+from the file layout, the initialization engine falls back to attempt
+launching the program path specified via the alternative init= boot
+flag, or systematically sweeps standard path locations including
+/sbin/init and /etc/init.</p>
+<p>Within the Linux architecture, the /init script file (housed inside the
+compiled initramfs archive that was pushed into physical RAM by the
+bootloader during early boot) functions as the definitive heart of the
+initial memory-resident filesystem [25.2]. It represents the absolute
+first user-space application thread (PID 1) allowed to execute on the
+machine following the mounting of the ramdisk. Typically structured as
+an automated shell script, the execution of /init coordinates the
+following system operations:</p>
+<ul>
+<li>
+<p>Mounts the foundational virtual and pseudo-filesystems—including
+populating the /proc, /sys, and /dev directory paths—to open the
+primary kernel communication channels [27.6, 28.1, 28.4].</p>
+</li>
+<li>
+<p>Performs automated hardware probing sweeps to discover and load the
+concrete storage controller drivers (such as SATA, NVMe, or hardware
+RAID modules) or network adapter drivers. Stripped of this automated
+module injection, the core kernel would remain completely blind to the
+physical hard drive hardware.</p>
+</li>
+<li>
+<p>Parses the kernel command-line arguments to resolve the explicit
+root=UUID=... string block, locating the definitive primary storage
+disk partition.</p>
+</li>
+<li>
+<p>If the target primary hard drive partition incorporates physical disk
+encryption, the script manages user interaction to prompt for the
+decryption passphrases and energizes the device mapper loops to unlock
+the data block.</p>
+</li>
+<li>
+<p>The moment the true primary hard drive partition is successfully
+resolved and mounted, the script dispatches a root-swapping routine to
+pivot the system root over to the physical hard drive, permanently
+hand-shaking PID 1 execution control over to the storage disk's
+standard /sbin/init daemon.</p>
+</li>
+</ul>
+<p>The detailed transitional pipeline routing control from the early
+synchronous kernel boot stages down to the initialization of the
+user-space init daemon is illustrated in Figure 30-2.</p>
+<center>
+<figure>
+<img src="./media/image157.png" style="width:90%;height:auto" />
+<figcaption>
+<p>
+Figure 30-2 Core Execution Transition Routing Control from Kernel Boot
+to User-Space init</p>
+</figcaption>
+</figure>
+</center>
+<p>If the file target pointed to by ramdisk_execute_command validates as
+absent from memory, the routine clears the tracking string pointer
+entirely and dispatches the core function prepare_namespace() to prepare
+and mount the permanent physical root filesystem (rootfs). This
+milestone marks the definitive moment where the kernel completes its
+comprehensive self-testing sweeps to branch execution over to a
+production user-space initialization framework (such as a standard
+binary init or the enterprise systemd daemon) [30.2].</p>
+<p>This routine constitutes a highly critical, foundational hub within the
+Linux storage mounting pipeline. It is hosted within the storage
+bootstrap source file git/init/do_mounts.c, and its definition is
+implemented as follows:</p>
+<p>The function prepare_namespace() acts as the definitive command center
+for the kernel's storage partition validation and root directory
+mounting pipelines. Its internal execution paths process the following
+milestones:</p>
+<ul>
+<li>
+<p>Handling Intentional Storage Boot Delays: If the kernel command-line
+arguments specify a root_delay parameter, the initialization sequence
+logs a trace and drops the execution path into a synchronous sleep
+phase (ssleep). This delay is critical on server or embedded platforms
+to afford slow, asynchronous, or external storage peripherals (such as
+USB drives, external SAS enclosures, or FireWire block arrays)
+acceptable time to complete their low-level hardware enumeration loops
+before the kernel attempts a partition query.</p>
+</li>
+<li>
+<p>Awaiting Device Discovery Stabilization: Dispatches
+wait_for_device_probe() to block the thread until the driver framework
+registers that all asynchronous background hardware probing passes
+have safely finished. This ensures that the kernel has comprehensively
+attempted to load, bind, and stabilize the drivers for all discovered
+physical host controllers [29.4].</p>
+</li>
+<li>
+<p>Assembling Software RAID Ensembles: Invokes md_run_setup() to process
+software-defined RAID properties. If the designated boot partition
+resides inside a Linux Software RAID configuration (such as booting
+off a /dev/md0 multi-disk target), this routine aggregates the
+physical disk metadata and assembles the array to bring the logical
+block device online.</p>
+</li>
+<li>
+<p>Resolving and Parsing the Target Root Device: Inspects the global
+tracking array saved_root_name to process the storage parameter
+requested via the root= boot flag.</p>
+<ul>
+<li>
+<p>Flash Media Bypass Path: If the character string identifies that the
+target is a raw flash memory abstraction layer common in embedded
+designs (such as matching an MTD or UBI flash layout string like
+"mtd" or "ubi"), the filesystem core recognizes that the root is
+not a conventional spinning platter or block partition. It skips
+standard disk enumeration loops to mount the target directly via
+mount_block_root() and branches control straight to the trailing
+cleanup sequence (goto out).</p>
+</li>
+<li>
+<p>Converting Alphanumeric Names to Canonical Device Keys: For standard
+block partitions (such as a SCSI or NVMe drive path like /dev/sda1),
+the routine dispatches name_to_dev_t() to parse the string token and
+translate it into a structured, internal kernel-space device integer
+configuration identifier (ROOT_DEV). It subsequently increments the
+text string memory pointer forward by 5 bytes to discard the leading
+literal characters "/dev/" from the descriptor name.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Executing Legacy Initrd Loading Loops: Fires the sub-routine
+initrd_load() to check for an integrated RAM disk layout. If this
+loading pass returns a successful validation status, the routine
+shifts execution control straight to the concluding stage via a jump
+to the label out.</p>
+</li>
+<li>
+<p>Enforcing Persistent Storage Queries under rootwait Constraints: If
+the calculated root device tracking key evaluates as vacant (ROOT_DEV
+== 0) and the administrator explicitly enabled the rootwait option on
+the command line, the kernel drops into a synchronous while loop,
+checking driver_probe_done() and retrying name_to_dev_t() every 5
+milliseconds. This blocking watch loop stops the system from
+prematurely declaring a boot failure when running on contemporary
+storage pipelines that exhibit variable hardware discovery timelines
+(such as high-speed NVMe nodes or external USB 3.0 lines that
+stabilize later than the core boot sequence). Upon breaking out of the
+watch loop, the subsystem dispatches async_synchronize_full() to
+ensure all out-of-order storage tracing threads have safely finalized
+their operations.</p>
+</li>
+<li>
+<p>Mounting the Primary Storage Platter: Invokes the core routine
+mount_root() to physically mount the primary block device partition
+resolved from the root= string directly onto the current execution
+path context, constructing the definitive new root repository window.</p>
+</li>
+<li>
+<p>Binding the Device Nodes Filesystem: Calls devtmpfs_mount() to mount
+the automated device nodes filesystem onto the designated /dev path
+exposed within the freshly attached physical primary storage
+partition, ensuring user-space tasks maintain instant, un-shared
+access to interact with low-level peripheral drivers [27.6, 30.2.1].</p>
+</li>
+<li>
+<p>Pivoting the Global Mount Tree Hierarchy: Dispatches the VFS core
+mounting primitive init_mount(".", "/", NULL, MS_MOVE, NULL). This
+operation uses the current context directory symbol "."—which
+anchors the memory address coordinates of the physical storage
+partition mounted by mount_root()—and shifts that entire compiled
+mount tree structure to override the temporary boot root, cementing it
+as the absolute master "/" root of the virtual filesystem
+architecture.</p>
+</li>
+<li>
+<p>Executing the Ultimate Namespace Chroot Migration: Invokes
+init_chroot(".") to forcefully pivot the executing process thread's
+root directory coordinates to match this newly established root
+junction. This operation successfully terminates the kernel's
+dependency on the temporary ramdisk layout, guiding the primary
+execution context permanently into the "User World."</p>
+</li>
+</ul>
+<p>In summary, the conditional block structured as if (init_eaccess(..))
+operates as a definitive tracking mechanism engineered to verify whether
+the memory-resident boot-stage startup scripts are present and
+functional. If the check flags that the ramdisk script environment is
+absent or unconfigured, the kernel changes tracks to mount the physical
+hard drive partitions.</p>
+<p>Finally, upon wrapping up the storage mounting loops,
+kernel_init_freeable() dispatches a call to integrity_load_keys() to
+load the security public keys and cryptographic certificates consumed by
+the Integrity Measurement Architecture (IMA) and the Extended
+Verification Module (EVM).</p>
+<ul>
+<li>
+<p>IMA Validation Subsystem: Assumes sole responsibility for verifying
+the absolute integrity of execution binaries, shared objects, and
+library files prior to authorizing their execution or opening their
+handles (validating the blocks against strict cryptographic signatures
+or SHA hashes). integrity_load_keys() extracts the pre-populated
+trusted certificate keys compiled into the secure kernel data
+structures and writes them onto the system's global keyrings
+[27.3]. This provides the verification engine with the public keys
+required to verify that subsequently launched user-space binaries or
+dynamic link libraries have not suffered malicious runtime
+manipulation or code injection.</p>
+</li>
+<li>
+<p>EVM Hardening Subsystem: Safeguards the extended security attributes
+(xattrs) associated with filesystem nodes, locking down attributes
+including file access permission bitmasks, ownership user mappings,
+and the embedded IMA signature envelopes themselves. This protection
+grid ensures that an attacker cannot alter a file's metadata
+descriptors (such as attempting an privilege escalation exploit by
+transforming a read-only configuration script into a world-writable
+node) to step around the kernel's MAC enforcement checks [27.4].</p>
+</li>
+</ul>
+<p>Upon the clean conclusion of the kernel_init_freeable() block, the
+system's core initialization sweeps are essentially finalized. Every
+memory page frame explicitly decorated with the compilation attribute
+__init (the data blocks bounded precisely between the tracking markers
+__init_begin and __init_end) becomes obsolete, and the main system
+thread kernel_init() prepares to process sequential memory reclamation
+sweeps to free these pages back to the allocator.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="30.4 Introduction to the initcall Mechanism.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="30.6 Reclaiming Boot-Stage Resources and Finalizing Kernel Mappings.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="30.4 Introduction to the initcall Mechanism.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="30.6 Reclaiming Boot-Stage Resources and Finalizing Kernel Mappings.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

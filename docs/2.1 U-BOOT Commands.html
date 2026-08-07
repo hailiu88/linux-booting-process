@@ -1,0 +1,769 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>U-BOOT Commands - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/2.1 U-BOOT Commands.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="21-u-boot-commands"><a class="header" href="#21-u-boot-commands">2.1 U-BOOT Commands</a></h2>
+<p>U-BOOT provides a vast array of commands dedicated to interacting with
+peripherals, memory, file systems, and networking devices. Users can
+leverage these commands to read data from storage components, write
+payloads to target devices, configure hardware peripherals, and display
+critical system information. U-BOOT implements two distinct command line
+interpreter backends: a legacy simple command line interface and a
+Bourne-shell-compatible command line parser known as HUSH. Interaction
+with the user is managed dynamically through this text-based command
+shell.</p>
+<p>U-BOOT commands are structurally categorized into system information,
+memory operations, flash storage manipulation, execution control,
+network utilities, environment variable overrides, file system
+abstraction support, special-purpose routines, advanced configuration
+commands, and miscellaneous helpers. The subsequent sections outline
+these functional sets systematically.</p>
+<h3 id="211-information-commands"><a class="header" href="#211-information-commands">2.1.1 Information Commands</a></h3>
+<p>Information commands are utilized to query various system metrics and
+hardware parameters. These commands include:</p>
+<ul>
+<li>
+<p>bdinfo: Displays system board information.</p>
+</li>
+<li>
+<p>coninfo: Displays console terminal interface statistics.</p>
+</li>
+<li>
+<p>flinfo: Displays flash memory configuration and layout details.</p>
+</li>
+<li>
+<p>iminfo: Displays the header block details of an uncompressed image
+file.</p>
+</li>
+<li>
+<p>imls: Lists boot images found across storage blocks in flash memory.</p>
+</li>
+<li>
+<p>fatinfo: Displays metadata and statistics of a FAT file system
+partition.</p>
+</li>
+<li>
+<p>mii: Inspects and controls Ethernet Media Independent Interface (MII)
+and PHY registers.</p>
+</li>
+<li>
+<p>help: Displays online interactive help summaries for all supported
+shell commands.</p>
+</li>
+</ul>
+<p>The following output shows the structural execution metrics returned by
+running the bdinfo command, where =&gt; represents the interactive U-BOOT
+command prompt.</p>
+<pre><code>=&gt; bdinfo
+
+memstart = 0x00000000
+
+memsize = 0x04000000
+
+flashstart = 0x40000000
+
+flashsize = 0x00800000
+
+flashoffset = 0x00030000
+
+sramstart = 0x00000000
+
+sramsize = 0x00000000
+
+immr_base = 0xFFF00000
+
+bootflags = 0x00000001
+
+intfreq = 50 MHz
+
+busfreq = 50 MHz
+
+ethaddr = 00:D0:93:00:28:81
+
+IP addr = 0.0.0.0
+
+baudrate = 115200 bps
+
+=&gt;
+
+the execution results of the help command are presented below:
+
+=&gt;help
+
+? - alias for \'help\'
+</code></pre>
+<p>If a user wishes to query the specific usage and syntax parameters for a
+particular utility, they can execute help &lt;command&gt;. For example:</p>
+<pre><code>=&gt; help run
+
+run var [...]
+</code></pre>
+<p>- run the commands in the environment variable(s) 'var'</p>
+<p>The usage structure and syntax options for the mii command are defined
+as follows:</p>
+<ul>
+<li>
+<p>mii device: Lists all registered Ethernet interface devices.</p>
+</li>
+<li>
+<p>mii device &lt;name&gt;: Sets the active target device to &lt;name&gt;.</p>
+</li>
+<li>
+<p>mii read &lt;addr&gt; &lt;reg&gt;: Reads the value of register &lt;reg&gt; from
+the Media Independent Interface (MII) PHY address &lt;addr&gt;.</p>
+</li>
+<li>
+<p>mii write &lt;addr&gt; &lt;reg&gt; &lt;data&gt;: Writes the payload word &lt;data&gt;
+into the MII PHY address &lt;addr&gt; register &lt;reg&gt;.</p>
+</li>
+</ul>
+<h3 id="212-memory-commands"><a class="header" href="#212-memory-commands">2.1.2 Memory Commands</a></h3>
+<p>This class of commands is dedicated to volatile memory manipulation and
+includes the following operations:</p>
+<ul>
+<li>
+<p>base: Displays or configures the baseline address offset, which serves
+as a global reference offset for subsequent memory access commands.</p>
+</li>
+<li>
+<p>crc32: Computes a 32-bit Cyclic Redundancy Check (CRC32) checksum over
+a memory buffer.</p>
+</li>
+<li>
+<p>cmp: Performs a byte-by-byte comparison between two distinct memory
+regions.</p>
+</li>
+<li>
+<p>cp: Executes a bulk memory copy operation from a source address to a
+destination buffer.</p>
+</li>
+<li>
+<p>md: Displays (dumps) memory content in organized hex and ASCII views.</p>
+</li>
+<li>
+<p>mm: Modifies memory contents interactively with automatic address
+auto-increment.</p>
+</li>
+<li>
+<p>mtest: Performs a standard, non-destructive volatile memory stress
+test across a given range.</p>
+</li>
+<li>
+<p>mw: Fills a specific memory boundary range with a fixed data pattern.</p>
+</li>
+<li>
+<p>loop: Loops memory access infinitely across a given address envelope
+for hardware troubleshooting.</p>
+</li>
+</ul>
+<p>The usage conventions and execution results for the base and md
+utilities are presented below:</p>
+<pre><code>=&gt; base
+
+Base Address: 0x00000000
+
+=&gt; md 0 c
+
+00000000: feffffff 00000000 7cbd2b78 7cdc3378 ........|. +x|.3x
+
+00000010: 3cfb3b78 3b000000 7c0002e4 39000000 &lt;.;x;...|...9...
+
+00000020: 7d1043a6 3d000400 7918c3a6 3d00c000 }.C.=...y...=...
+
+=&gt; base 40000000
+
+Base Address: 0x40000000
+
+=&gt; md 0 c
+
+40000000: 27051956 50504342 6f6f7420 312e312e '..VPPCBoot 1.1.
+
+40000010: 3520284d 61722032 31203230 3032202d 5 (Mar 21 2002 -
+
+40000020: 2031393a 35353a30 34290000 00000000 19:55:04)......
+
+=&gt;
+</code></pre>
+<h3 id="213-flash-storage-commands"><a class="header" href="#213-flash-storage-commands">2.1.3 Flash Storage Commands</a></h3>
+<ul>
+<li>
+<p>cp: Flash memory programming utility (copies chunks from RAM to flash
+configurations).</p>
+</li>
+<li>
+<p>flinfo: Displays detailed flash sector layouts, banks, and hardware
+definitions.</p>
+</li>
+<li>
+<p>erase: Erases explicit sectors or full ranges within flash storage
+arrays.</p>
+</li>
+<li>
+<p>protect: Enables or disables hardware/software write-protection bits
+across flash memory blocks.</p>
+</li>
+</ul>
+<h3 id="214-execution-control-commands"><a class="header" href="#214-execution-control-commands">2.1.4 Execution Control Commands</a></h3>
+<ul>
+<li>
+<p>autoscr: Executes standalone binary macro scripts from memory.</p>
+</li>
+<li>
+<p>bootm: Boots a structured application or kernel system image resident
+in physical RAM.</p>
+</li>
+<li>
+<p>bootelf: Executes a binary application image formatted as a standard
+Executable and Linkable Format (ELF) structure from memory.</p>
+</li>
+<li>
+<p>bootvx: Boots a structured VxWorks operating system application image
+built as an ELF payload.</p>
+</li>
+<li>
+<p>go: Jumps directly to a raw instruction address (addr) to start
+bare-metal execution sequences.</p>
+</li>
+</ul>
+<p>The standard execution syntax for the bootm command is defined as
+follows:</p>
+<p>bootm [addr [arg ...]]</p>
+<p>- boot application image stored in memory passing arguments 'arg
+...'; when booting a Linux kernel, 'arg' can be the address of an
+initrd image.</p>
+<h3 id="215-network-utilities"><a class="header" href="#215-network-utilities">2.1.5 Network Utilities</a></h3>
+<ul>
+<li>
+<p>bootp: Leverages BOOTP/TFTP protocol interactions to fetch and boot a
+system image over the network.</p>
+</li>
+<li>
+<p>cdp: Configures and processes the Cisco Discovery Protocol (CDP)
+topology metadata.</p>
+</li>
+<li>
+<p>dhcp: Invokes the internal DHCP client routine to acquire a dynamic
+local IP address and poll global boot configuration vectors.</p>
+</li>
+<li>
+<p>loadb: Loads a raw binary payload stream into memory using the serial
+console line via the Kermit protocol.</p>
+</li>
+<li>
+<p>loads: Loads a text-based Motorola S-record firmware payload into
+target memory blocks via the serial line interface.</p>
+</li>
+<li>
+<p>nfs: Restructures network storage calls to boot an operating system
+image using the Network File System (NFS) protocol layout.</p>
+</li>
+<li>
+<p>ping: Transmits standard ICMP ECHO_REQUEST packets to network hosts to
+check end-to-end transport layer paths.</p>
+</li>
+<li>
+<p>rarpboot: Combines RARP/TFTP server handshakes to pull and launch a
+system image over network environments.</p>
+</li>
+<li>
+<p>tftpboot: Downloads and initializes a system image over network setups
+using the Trivial File Transfer Protocol (TFTP).</p>
+</li>
+</ul>
+<p>The configuration format for the bootp command is structured as follows:</p>
+<p>bootp [loadAddress] [bootfilename]</p>
+<p>The configuration format for pulling and booting software via the nfs
+client framework is structured as follows:</p>
+<p>nfs [loadAddress] [host_ip_addr:bootfilename]</p>
+<h3 id="216-environment-variable-commands"><a class="header" href="#216-environment-variable-commands">2.1.6 Environment Variable Commands</a></h3>
+<ul>
+<li>
+<p>printenv: Displays the values of all currently defined environment
+variables.</p>
+</li>
+<li>
+<p>saveenv: Writes the active environment variables from RAM to
+non-volatile storage.</p>
+</li>
+<li>
+<p>askenv: Prompts the user via the standard input console to capture and
+assign a value to an environment variable.</p>
+</li>
+<li>
+<p>setenv: Establishes a new environment variable or modifies/deletes an
+existing one.</p>
+</li>
+<li>
+<p>run: Executes the command sequence or macro embedded within specified
+environment variables.</p>
+</li>
+<li>
+<p>bootd: Initiates the default boot sequence, structurally equivalent to
+executing run bootcmd.</p>
+</li>
+</ul>
+<h3 id="217-file-system-support-commands"><a class="header" href="#217-file-system-support-commands">2.1.7 File System Support Commands</a></h3>
+<ul>
+<li>
+<p>chpart: Changes the active target partition.</p>
+</li>
+<li>
+<p>fsinfo: Displays fundamental metadata regarding the active file system
+type.</p>
+</li>
+<li>
+<p>fsload: Loads a raw binary payload into memory from a generic
+supported file system.</p>
+</li>
+<li>
+<p>ls: Lists the files and subdirectories resident within a specified
+path.</p>
+</li>
+<li>
+<p>fatinfo: Displays low-level cluster and volume metadata for a
+FAT-formatted partition.</p>
+</li>
+<li>
+<p>fatls: Lists the contents of a directory located on a FAT-formatted
+file system partition.</p>
+</li>
+<li>
+<p>fatload: Loads a binary file from a DOS/FAT file system into physical
+memory.</p>
+</li>
+<li>
+<p>nand: The NAND flash memory subsystem, encompassing an array of
+sub-commands for raw block operations.</p>
+</li>
+<li>
+<p>reiserls: Lists the subdirectory layout and contents within a ReiserFS
+file system hierarchy.</p>
+</li>
+<li>
+<p>reiserload: Loads a binary payload into memory from a ReiserFS file
+system.</p>
+</li>
+</ul>
+<h3 id="218-special-purpose-commands"><a class="header" href="#218-special-purpose-commands">2.1.8 Special-Purpose Commands</a></h3>
+<ul>
+<li>
+<p>i2c: The I2C bus subsystem, providing tools to probe, read, and write
+to peripheral chips.</p>
+</li>
+<li>
+<p>doc: Disk On Chip (DOC) storage subsystem interface routines.</p>
+</li>
+<li>
+<p>dtt: Digital Thermometer and Thermostat telemetry subsystem.</p>
+</li>
+<li>
+<p>eeprom: Subsystem for reading and writing to on-board EEPROM chips.</p>
+</li>
+<li>
+<p>fpga: Subsystem designated for loading and configuring
+field-programmable gate array bitstreams.</p>
+</li>
+<li>
+<p>ide: Integrated Drive Electronics (IDE) storage subsystem.</p>
+</li>
+<li>
+<p>kgdb: Switches the system interface into Kernel GNU Debugger mode for
+low-level trapping.</p>
+</li>
+<li>
+<p>diskboot: Initiates an operating system boot sequence from an attached
+IDE storage device.</p>
+</li>
+<li>
+<p>icache: Enables or disables the processor's internal instruction
+cache (I-Cache).</p>
+</li>
+<li>
+<p>dcache: Enables or disables the processor's internal data cache
+(D-Cache).</p>
+</li>
+<li>
+<p>diag: Executes hardware board-level diagnostic monitoring sequences.</p>
+</li>
+<li>
+<p>log: Manages and reviews device log configurations.</p>
+</li>
+<li>
+<p>pci: Scans, displays, and modifies fields within the PCI configuration
+space layout.</p>
+</li>
+<li>
+<p>regdump: Dumps the current hardware register states to the console
+interface.</p>
+</li>
+<li>
+<p>usb: The Universal Serial Bus (USB) subsystem, managing bus
+enumeration and storage/peripheral access.</p>
+</li>
+<li>
+<p>sspi: Synchronous Serial Peripheral Interface (SPI) configuration and
+transfer utility.</p>
+</li>
+</ul>
+<p>Each of the subsystems detailed above contains specific sub-commands for
+execution. Using the help utility alongside any subsystem name exposes
+its structural formatting and syntax.</p>
+<h3 id="219-miscellaneous-commands"><a class="header" href="#219-miscellaneous-commands">2.1.9 Miscellaneous Commands</a></h3>
+<ul>
+<li>
+<p>bmp: Manipulates and renders BMP format image data. For example:<br>bmp info &lt;image address&gt; displays file metadata for a bitmap image
+resident at the designated memory address, whereas bmp display &lt;image
+address&gt; [x,y] renders the bitmap located at &lt;image address&gt; onto
+the screen starting at coordinates (x,y).</p>
+</li>
+<li>
+<p>date: Displays or sets the current real-time clock (RTC) calendar date
+and system time.</p>
+</li>
+<li>
+<p>echo: Outputs explicit text strings or expanded environment variable
+values directly to the active console terminal interface.</p>
+</li>
+<li>
+<p>exit: Exits the execution context of the currently running macro
+script.</p>
+</li>
+<li>
+<p>kbd: Scans and captures raw keyboard matrix input sequences.</p>
+</li>
+<li>
+<p>in: Reads a data byte or word from a hardware I/O port address space.</p>
+</li>
+<li>
+<p>out: Writes a data byte or word to a hardware I/O port address space.</p>
+</li>
+<li>
+<p>reset: Triggers a full system hardware reset and cold reboot cycle.</p>
+</li>
+<li>
+<p>sleep: Pauses the execution sequence of the command interpreter for a
+specified duration of seconds.</p>
+</li>
+<li>
+<p>test: Evaluates conditional statement expressions for shell script
+control flows (minimal implementation).</p>
+</li>
+<li>
+<p>version: Displays the current compilation release and build version
+string of the running U-BOOT binary.</p>
+</li>
+<li>
+<p>wd: Probes, triggers, or configures the system hardware watchdog timer
+parameters.</p>
+</li>
+<li>
+<p>?: Acts as a direct structural alias for the help instruction.</p>
+</li>
+</ul>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="chapter_2.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="2.2 Environment Variables.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="chapter_2.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="2.2 Environment Variables.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

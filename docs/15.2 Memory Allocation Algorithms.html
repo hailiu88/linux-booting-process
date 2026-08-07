@@ -1,0 +1,875 @@
+<!DOCTYPE HTML>
+<html lang="en" class="ayu sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Memory Allocation Algorithms - DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</title>
+
+
+        <!-- Custom HTML head -->
+        <!-- 网页端专属反调试防复制脚本 -->
+        <script>
+        (function () {
+            // 1. 彻底禁用网页右键菜单
+            document.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            });
+        
+            // 2. 拦截键盘快捷键（禁用 F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U）
+            document.addEventListener('keydown', function (e) {
+                if (e.keyCode === 123) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.metaKey && e.altKey && e.keyCode === 73) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (e.ctrlKey && e.keyCode === 85) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        
+            // 3. 终极反调试卡死
+            setInterval(function () {
+                (function () {
+                    return false;
+                }['constructor']('debugger')());
+            }, 50);
+        })();
+        </script>
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-0392ca55.css">
+        <link rel="stylesheet" href="css/chrome-fc474251.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-2f38d6e5.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "ayu";
+            const default_dark_theme = "ayu";
+            window.path_to_searchindex_js = "searchindex-1fa106ba.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-72f10c92.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">DETAILED ANALYSIS OF THE LINUX OPERATING SYSTEM</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/edit/main/src/src/15.2 Memory Allocation Algorithms.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="152-memory-allocation-algorithms"><a class="header" href="#152-memory-allocation-algorithms">15.2 Memory Allocation Algorithms</a></h2>
+<p>Previously, we introduced the block memory allocation strategy adopted
+during the early boot phase. This method is relatively simple and does
+not represent an efficient approach to memory management. Once boot
+initialization is complete, Linux transitions to highly efficient memory
+management mechanisms.</p>
+<p>Memory allocation in Linux is executed hierarchically. The vmalloc()
+memory allocation function leverages the page allocator to allocate
+memory spaces larger than a single memory page, ensuring that the
+virtual addresses are contiguous even if the physical addresses are
+non-contiguous. The page memory allocator employs the buddy system to
+partition contiguous physical memory into 4096-byte pages, performing
+memory allocation on a page-level granularity.
+[<a href="https://kernel-internals.org/mm/slab/">[1]</a>,
+<a href="https://www.geeksforgeeks.org/operating-systems/operating-system-allocating-kernel-memory-buddy-system-slab-system/">[2]</a>,
+<a href="https://docs.kernel.org/core-api/memory-allocation.html">[3]</a>]</p>
+<p>Various kmalloc() functions operate on top of the memory pages allocated
+by the page allocator. They leverage the SLOB, SLAB, or SLUB memory
+allocators to manage memory spaces smaller than a single page. The
+kmalloc() memory allocation functions primarily serve the internal
+memory allocation needs of the kernel.
+[<a href="https://www.linkedin.com/posts/systemdrd_linux-kernel-memory-allocation-explained-activity-7417106594754355201-00l-">[1]</a>,
+<a href="https://docs.kernel.org/core-api/memory-allocation.html">[2]</a>]</p>
+<ul>
+<li>
+<p>SLOB (Simple List of Blocks) was adopted in early versions. It has
+been deprecated in desktop systems and is currently utilized primarily
+in embedded operating systems.
+[<a href="https://wiki.dreamrunner.org/public_html/Embedded-System/kernel/slab-slub-slob.html">[1]</a>,
+<a href="https://nitingupta.dev/post/slob-memory-allocator/">[2]</a>]</p>
+</li>
+<li>
+<p>SLAB is a relatively complex algorithm. Its primary advantage is
+minimal memory fragmentation, but its disadvantage is the requirement
+to preserve a massive amount of management metadata. As of the <a href="https://www.linux.com/news/linux-6-8-to-drop-the-slab-allocator-slub-optimizations-coming-too/">[Linux
+6.8]</a>
+release, the legacy SLAB allocator has been completely removed from
+the kernel.
+[<a href="https://www.linux.com/news/linux-6-8-to-drop-the-slab-allocator-slub-optimizations-coming-too/">[1]</a>,
+<a href="https://wiki.dreamrunner.org/public_html/Embedded-System/kernel/slab-slub-slob.html">[2]</a>,
+<a href="https://www.linkedin.com/posts/systemdrd_linux-kernel-memory-allocation-explained-activity-7417106594754355201-00l-">[3]</a>]</p>
+</li>
+<li>
+<p>SLUB improves upon the SLAB algorithm by mitigating the disadvantage
+of storing substantial amounts of management metadata.
+[<a href="https://wiki.dreamrunner.org/public_html/Embedded-System/kernel/slab-slub-slob.html">[1]</a>]</p>
+</li>
+</ul>
+<p>The buddy system is utilized inside the page allocator, primarily to
+allocate physical memory spaces larger than a single page. Both the SLAB
+and SLUB allocators request memory blocks from the buddy allocator to
+form their slabs. The hierarchical relationships among these distinct
+memory management modules are illustrated in Figure 15-1.
+[<a href="https://kernel-internals.org/mm/slab/">[1]</a>,
+<a href="https://docs.kernel.org/core-api/memory-allocation.html">[2]</a>]</p>
+<center>
+<figure>
+<img src="./media/image115.png" style="width:60%;height:auto" />
+<figcaption>
+<p>Figure 15-1 Hierarchical Relationship among Memory Management Modules</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="1521-slob-allocation-algorithm"><a class="header" href="#1521-slob-allocation-algorithm">15.2.1 SLOB Allocation Algorithm</a></h3>
+<p>SLOB is one of the earliest memory management algorithms adopted by
+Linux. It is primarily utilized to allocate memory spaces smaller than a
+single page from the SLOB heap. Its minimum allocation granularity can
+reach 2 bytes, though it typically evaluates to 4 bytes. When the
+requested memory space is smaller than a single page, kmalloc()-type
+functions leverage the SLOB allocator to carve out memory from the SLOB
+heap. Conversely, when the requested space reaches the size of a single
+page, kmalloc() bypasses the heap and directly invokes alloc_pages() to
+acquire the memory.
+[<a href="https://hammertux.github.io/slab-allocator">[1]</a>,
+<a href="https://nitingupta.dev/post/slob-memory-allocator/">[2]</a>,
+<a href="https://wiki.dreamrunner.org/public_html/Embedded-System/kernel/slab-slub-slob.html">[3]{.underline}</a>]</p>
+<p>The SLOB heap is structurally composed of three independent linked
+lists, with each list consisting of multiple memory pages:
+[<a href="https://hammertux.github.io/slab-allocator">[1]</a>]</p>
+<ul>
+<li>
+<p>The first linked list is utilized to allocate memory requests smaller
+than 256 bytes.
+[<a href="https://hammertux.github.io/slab-allocator">[1]</a>]</p>
+</li>
+<li>
+<p>The second list is utilized to allocate memory requests smaller than
+1024 bytes.
+[<a href="https://hammertux.github.io/slab-allocator">[1]</a>]</p>
+</li>
+<li>
+<p>The final list is reserved for all other standard allocation cases.
+[<a href="https://hammertux.github.io/slab-allocator">[1]</a>]</p>
+</li>
+</ul>
+<p>Each page corresponding to these three linked lists maintains its own
+sub-list composed of the available free memory blocks within that page.
+This sub-list is arranged in ascending order based on the physical
+starting addresses of the individual blocks. When a memory block is
+released, it is inserted into the appropriate sorted position within the
+linked list according to its address, rather than simply being appended
+to the end of the list.
+[<a href="https://hammertux.github.io/slab-allocator">[1]</a>]</p>
+<p>When executing a memory allocation request, the algorithm first
+identifies the first page with sufficient free space within the
+appropriate page linked list. It then traverses that page's internal
+sub-list to locate the first free memory block that satisfies the
+requested capacity constraint and assigns it to the requesting context.
+The primary advantage of the SLOB algorithm is its simplicity and its
+minimal requirement for storing management metadata. However, the
+disadvantages of this algorithm are also conspicuous: it introduces
+exceptionally severe memory fragmentation, resulting in relatively low
+overall memory utilization efficiency.</p>
+<h3 id="1522-slab-memory-allocation-algorithm"><a class="header" href="#1522-slab-memory-allocation-algorithm">15.2.2 SLAB Memory Allocation Algorithm</a></h3>
+<p>Memory allocation and deallocation are the most universal operations
+within the kernel, making rapid and effective allocation strategies
+paramount to overall operating system performance. To optimize these
+paths, Linux adopted the SLAB memory allocator starting with version
+2.1.23. The SLAB architecture was originally designed and implemented
+within the Solaris operating system.</p>
+<p>The defining characteristic of the SLAB allocator is that the data
+structures required to manage kernel memory are cached as "objects"
+within dedicated high-speed lookaside caches. When allocating memory, if
+a required data object does not exist, it is instantiated. If the object
+already resides within the lookaside cache, the allocator merely
+retrieves the memory from the cache and increments the data object's
+reference count. Under this paradigm, if the existing cache footprint is
+insufficient, the allocator can request additional backing pages without
+needing to re-instantiate or re-initialize the underlying object
+structures. Conversely, during memory deallocation, if an object's
+reference count is greater than 1, the memory is returned to the
+lookaside cache and the reference count is decremented. Only when the
+reference count drops to 1 will the memory be fully released and the
+tracking object destroyed.</p>
+<p>Memory reclamation refers to the explicit process of freeing memory
+blocks owned by the lookaside caches and destroying the allocator data
+objects within them. Because objects are only initialized and destroyed
+during large-scale reclamation sweeps rather than on a per-allocation
+basis, the kernel avoids repetitive allocation, initialization, and
+breakdown routines. This drastically minimizes computational overhead
+and accelerates individual memory allocation and deallocation cycles.</p>
+<p>The SLAB allocator infrastructure within Linux is structured as a
+collection of caches implemented by struct kmem_cache objects, with each
+cache tuned to service a specific size and type of memory. The managed
+slots scale logarithmically across intervals spanning 0-1, 1-2^2^-1,
+2^2^-2^3^-1, …, 2^25^-2^26^-1 bytes. The primary allocation types
+encompass KMALLOC_NORMAL, KMALLOC_RECLAIM, and KMALLOC_DMA. These
+individual caches are woven together via the list field of struct
+kmem_cache to form a global, doubly linked circular list designated as
+slab_caches. Every cache within this list operates independently to
+manage objects belonging to a specific functional category. Each cache
+contains an array of pointers referencing localized cache nodes (struct
+kmem_cache_node), where each array index corresponds to a unique NUMA
+node.</p>
+<center>
+<figure>
+<img src="./media/image116.png" style="width:100%;height:auto" />
+<figcaption>
+<p>Figure 15-2 Data Structures of the SLAB Allocator</p>
+</figcaption>
+</figure>
+</center>
+<p>The kmem_cache_node structure contains three distinct list heads:
+slabs_full, slabs_partial, and slabs_free. These point respectively to
+linked lists composed of entirely allocated slabs, partially allocated
+slabs, and completely vacant slabs. These lists are threaded together
+using the slab_list field inside the corresponding struct page
+structures. The page structure serves as the core physical descriptor
+canvas adopted by the SLAB allocator to track backing physical memory.</p>
+<p>Every kmem_cache instance manages multiple underlying slabs, with each
+individual slab consisting of 2^n^ physically contiguous memory pages.
+Slabs spanning more than a single page are structurally managed as
+compound pages. Each slab is partitioned into equally sized chunks
+designated as objects. To prevent ambiguity within this architectural
+context, these objects are referred to as memory blocks. The baseline
+dimension of these blocks is dictated by the size field of kmem_cache,
+while the total count of blocks per slab is governed by the num field.</p>
+<p>The struct page utilized for this category of memory allocation
+incorporates an s_mem pointer, which references the starting memory
+address of the first block within that slab. Because a slab is
+guaranteed to consist of physically contiguous pages, this base pointer
+provides access to all individual blocks across all pages within the
+slab. The precise memory address of a given block is derived as:</p>
+<p>$$p = s_{_}mem + size*（idx - 1）$$</p>
+<p>Where <em>p</em> represents the target address of the <em>idx-th</em> block, and <em>idx</em>
+represents the sequential block index number.</p>
+<p>The page structure also encloses a pointer named slab_cache that
+references the parent kmem_cache instance managing that backing page.
+Concurrently, the slabs_full, slabs_partial, and slabs_free lists inside
+kmem_cache_node are populated by threading together the slab_list fields
+of the active memory pages. This dual linkage enables the kmem_cache
+manager to seamlessly locate any memory page under its jurisdiction,
+while enabling any given memory page to resolve its managing cache via
+the s_mem mapping.</p>
+<p>To fulfill a request, the SLAB allocator first selects the appropriate
+kmem_cache lookup slot from the slab_caches pool based on the requested
+block magnitude and the execution flags (GFP masks) passed by the
+calling thread. It then evaluates the target NUMA node via per-CPU
+topological variables to locate the matching kmem_cache_node. Following
+this, it traverses the slab_list chains across the slabs_full,
+slabs_partial, and slabs_free lists to select a candidate slab,
+ultimately deriving the exact destination memory block via the page's
+s_mem pointer and the target block index $idx$. This multi-stage
+address resolution workflow is detailed in Figure 15-3.</p>
+<center>
+<figure>
+<img src="./media/image117.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-3 Resolution of Memory Block Addresses within the SLAB
+Allocator</p>
+</figcaption>
+</figure>
+</center>
+<p>The kmem_cache object is defined within the header file
+git/include/linux/slab_def.h, where its leading field is the cpu_cache
+pointer. This pointer maps to a per-CPU private variable (per_cpu),
+ensuring that its evaluated target remains unique to each individual
+processor core. The pointer references a structure of type array_cache,
+whose internal entry pointer array caches the specific block indices
+allocated locally to that CPU core.</p>
+<p>When a processor core requests memory, it first queries its local
+array_cache to see if a free object is readily available. If a vacant
+slot exists, the memory block is instantly fulfilled from this local
+cache. If the local cache is exhausted, the allocator evaluates whether
+a shared array_cache is configured with available objects. If the shared
+tier is also empty, the engine falls back to inspect the slabs_partial
+and slabs_free chains hosted inside the node's kmem_cache_node. If a
+vacant object is discovered at this tier, the indices of the acquired
+blocks are pulled up to populate the CPU's local array_cache entry
+array. Finally, if no vacant space can be harvested from these lists,
+the allocator invokes the low-level page allocator (alloc_pages()) to
+carve a fresh backing page from virtual memory and append it to the
+kmem_cache tracking lists. If the underlying page allocator cannot
+fulfill the raw page request, an out-of-memory (OOM) error is triggered.</p>
+<p>The SLAB mechanism is heavily optimized to service memory allocations
+that fall below a single-page threshold. The comprehensive suite of core
+kernel kmalloc() routines relies entirely on this underlying allocation
+logic.</p>
+<h3 id="1523-slub-memory-allocation-algorithm"><a class="header" href="#1523-slub-memory-allocation-algorithm">15.2.3 SLUB Memory Allocation Algorithm</a></h3>
+<p>The kmem_cache object used by the SLAB allocator maintains a significant
+volume of metadata. For each NUMA node, a corresponding kmem_cache_node
+structure is present, and each kmem_cache_node manages three independent
+linked lists. Managing this metadata is inherently complex and consumes
+a considerable amount of CPU cycles. To further enhance memory
+allocation efficiency, Christoph Lameter implemented the SLUB memory
+allocation algorithm in 2008 within kernel version v2.6.23. Today, SLUB
+has become the primary memory allocator for Linux, and the widely
+utilized kmalloc subsystem is built directly upon the SLUB algorithm.</p>
+<p>The SLUB allocator optimizes several shortcomings of the SLAB memory
+allocator. It redefines the kmem_cache and kmem_cache_node structures,
+removing much of the superfluous management metadata. At runtime, it
+only utilizes a single partial list, while the full list is exclusively
+enabled when debugging is required. In the SLUB allocator, individual
+CPU cores no longer rely on arrays; instead, they utilize the local
+partial list and a freelist pointer to manage their active slabs and the
+internal memory objects within those slabs, respectively. When a CPU
+releases an active object, it puts it back onto its local freelist chain
+to facilitate immediate, lockless reuse.</p>
+<p>SLUB still manages memory blocks using the slab as a fundamental unit,
+and the layout dimension of a slab is dictated by the size field of the
+kmem_cache structure. Every individual slab is partitioned into multiple
+equally sized memory modules, designated as objects, whose baseline
+footprint is defined by the object_size field of the structure. In
+contrast to the SLAB allocation algorithm, each slab within SLUB can
+encapsulate supplemental debugging information; however, these tracking
+fields are entirely optional. Figure 15-4 illustrates the structural
+layout of a single object utilized within SLUB. The RED zone left
+padding, RED zone, SLUB allocation information, and KASAN allocation
+information segments are completely optional components that are only
+enabled by kernel or driver developers during debugging sessions. The
+precise physical positioning of each segment is governed by the
+individual fields within the kmem_cache structure.</p>
+<center>
+<figure>
+<img src="./media/image118.png" style="width:90%；height:auto" />
+<figcaption>
+<p>Figure 15-4 Composition of a Slab within the SLUB Allocator</p>
+</figcaption>
+</figure>
+</center>
+<p>The RED zone Left Padding ensures that the physical starting address of
+the active memory object strictly satisfies alignment criteria. The Red
+Zone is partitioned into a left zone and a right zone; it is utilized to
+execute memory out-of-bounds validation by filling a specific memory
+region with a dedicated magic number (such as 0xBB). The left zone is
+positioned immediately preceding the object payload, while the right
+zone succeeds the object payload. The Object Content represents the
+actual usable memory footprint granted to the user or kernel application
+request. When the object resides in a vacant state, the Free Pointer
+stores the memory address referencing the subsequent free object down
+the chain. The SLUB Allocation Information logs the specific function
+call or call stack responsible for allocating or freeing the object, a
+tracking capability typically exposed via CONFIG_SLUB_DEBUG. The KASAN
+Allocation Information represents metadata reserved exclusively for
+KASAN (Kernel Address Sanitizer), which logs highly precise call stacks
+for asynchronous allocations and deallocations to troubleshoot advanced
+vulnerabilities such as Use-After-Free (UAF). Finally, the Padding
+segment trails all metadata structures to align the total physical size
+of the unified object to a specific hardware alignment boundary.</p>
+<p>A slab is still fundamentally backed by the page structure. The page
+structure configuration adopted by the SLUB allocator encloses tracking
+fields such as slab_list, partial, next, pages, and counters. The next
+pointer of the slab_list field chains the individual slabs together to
+form a linked list. The explicit next pointer shares an identical memory
+slot with the next sub-field of slab_list, referencing the subsequent
+slab down the chain. The tracking fields pages and pobjects overlay the
+memory slot typically reserved for the prev pointer of slab_list, and
+are leveraged to log the cumulative number of slabs attached to the
+CPU's local partial list along with the total count of vacant objects
+contained within them. freelist is a standalone pointer that references
+the memory location preserving the starting address of the next free
+object within that specific slab. The counters variable shares its
+memory alignment with a trailing anonymous union; structurally, counters
+can be interpreted as a composite element composed of three sections:
+inuse, objects, and frozen. inuse occupies the upper 16 bits, tracking
+the number of memory objects that are currently allocated. The lower 16
+bits are split between objects and frozen. objects utilizes the upper 15
+bits of this lower half to represent the absolute count of objects
+partitioned within the slab. frozen utilizes the least significant bit
+(b0) to signify the structural condition of the slab; when this bit
+evaluates to 1, the slab is frozen, meaning only the specific CPU core
+that froze it possesses authorization to manipulate its object links.</p>
+<p>Each CPU maintains a local tracking variable of type struct
+kmem_cache_cpu, whose fields are mapped out as follows:</p>
+<ul>
+<li>
+<p>The freelist pointer references the memory address preserving the next
+available free object.</p>
+</li>
+<li>
+<p>The partial pointer references the linked list head capturing the
+partially vacant slabs.</p>
+</li>
+<li>
+<p>The page pointer references the active slab currently being consumed,
+which the CPU leverages to fulfill real-time memory allocations.</p>
+</li>
+</ul>
+<p>When allocating memory, the CPU first attempts to harvest a vacant
+object directly from its local freelist. If a free object cannot be
+located within the active CPU's freelist, the allocator falls back to
+fetch a partially vacant slab from its local partial list and
+subsequently extracts the required memory chunk from that slab. If no
+free space can be harvested from the local partial list, the engine
+queries the global partial list hosted inside the node's
+kmem_cache_node. If this path also fails, the allocator invokes the
+underlying page allocator (page_allocator) to carve a fresh slab out of
+system memory.</p>
+<p>Both the CPU's local partial list and the cache node's global partial
+list enforce strict capacity thresholds that are defined inside the
+parent kmem_cache structure. When the total number of slabs attached to
+a list surpasses this specified limit, the list is evaluated as full.
+When a CPU attempts to fetch a slab from its local partial list and
+finds it full, it flushes and releases all slabs residing on that local
+list back over to the node's global partial list. If the node's global
+list is also full during this synchronization pass, the surplus slabs
+are completely released back to the system memory allocator.</p>
+<p>Upon successfully acquiring a fresh slab, if the CPU's local page field
+evaluates to null, the slab is assigned directly to the page field.
+Conversely, if the page field is already occupied, the incoming slab is
+appended onto the CPU's local partial list. Figure 15-5 illustrates the
+list structure of partial slabs utilized by SLUB.</p>
+<center>
+<figure>
+<img src="./media/image119.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-5 Structural Arrangement of the Partial Slab Linked List</p>
+</figcaption>
+</figure>
+</center>
+<p>Figure 15-6 details the operational tracking chains utilized locally by
+each individual CPU core.</p>
+<center>
+<figure>
+<img src="./media/image120.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-6 Per-CPU Linked List Infrastructure inside the SLUB Allocator</p>
+</figcaption>
+</figure>
+</center>
+<h3 id="1524-buddy-memory-allocation-algorithm"><a class="header" href="#1524-buddy-memory-allocation-algorithm">15.2.4 Buddy Memory Allocation Algorithm</a></h3>
+<p>During the continuous process of allocating and freeing memory modules
+of varying sizes, the physical memory inevitably fragments into
+dispersed blocks of arbitrary capacities—a phenomenon known as memory
+fragmentation. Contiguous physical memory addresses not only accelerate
+memory read/write cycles but also represent a hard architectural
+constraint for certain operations such as Direct Memory Access (DMA).
+When fragmentation becomes severe, it increases access latency and can
+cause memory allocation failures even when aggregate free space is
+mathematically sufficient. Mitigating memory fragmentation is a
+fundamental requirement for any memory allocator. The buddy allocator is
+specifically designed to address memory fragmentation. Operating at the
+lowest layer of the core memory management hierarchy, it enforces a
+minimum allocation granularity of one page and handles the allocation of
+single or multi-page physical memory chunks. Its core design philosophy
+is to maximize the size of physically contiguous free memory spaces.</p>
+<p>As established in previous chapters, the Linux buddy allocator
+partitions the physical memory of each NUMA node into 11 distinct groups
+(orders), where each group is composed of equally sized, physically
+contiguous memory blocks. The capacities of these memory blocks scale
+across orders of 1 page, 2 pages, 4 pages, 8 pages, 16 pages, 32 pages,
+and so forth, with the final group managing block chunks of 1024 pages.
+These groups are explicitly utilized to service allocation demands of 1
+page, 2 pages, 4 pages, up to 1024 pages, respectively. The struct zone
+configuration for each individual NUMA node manages an array named
+free_area composed of 11 elements (spanning Order-0 to Order-10) of type
+struct free_area, which preserves the allocation metadata for these 11
+explicit orders. The free_area structure encloses an array of linked
+list heads named free_list with a capacity of MIGRATE_TYPES, alongside
+an nr_free tracking field that records the cumulative number of vacant
+memory blocks available within that specific order. Each element within
+the free_list array corresponds to a discrete migration type, tracking
+the available free blocks classified under that type. The migration
+types supported by Linux are defined within the header file
+git/include/linux/mmzone.h. Figure 15-7 illustrates the memory grouping
+topology utilized by the buddy allocator inside the page allocator
+subsystem.</p>
+<center>
+<figure>
+<img src="./media/image121.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-7 Memory Grouping Topology of the Buddy Allocator</p>
+</figcaption>
+</figure>
+</center>
+<p>The core buddy memory management engine is implemented within the source
+file git/mm/page_alloc.c. Full page allocations are dispatched via the
+interface alloc_pages(), which is declared within
+git/include/linux/gfp.h. When NUMA support is enabled in the system,
+alloc_pages() routes the request to alloc_pages_current(). This routine
+first reads the memory allocation policy constraint specified by the
+current process within struct task_struct-&gt;mempolicy. If the calling
+thread specifies explicit policies such as MPOL_BIND (forcing allocation
+to a strict subset of specific nodes), MPOL_INTERLEAVE (alternating
+allocations across nodes in a round-robin loop), or MPOL_PREFERRED
+(preferring local node allocation), alloc_pages_current() evaluates
+these criteria to derive an ordered list of candidate zones (Zonelist)
+before requesting pages from the buddy infrastructure. Depending on the
+resolved memory allocation policy, alloc_pages_current() triggers either
+alloc_page_interleave() or __alloc_pages_nodemask(), with
+alloc_page_interleave() ultimately falling back to invoke
+__alloc_pages_nodemask().</p>
+<p>Conversely, if NUMA support is disabled, alloc_pages() routes the
+request to alloc_pages_node(). Because multi-node concepts are absent
+under this constraint, numa_node_id() permanently returns the index of
+the singular, local physical node (typically Node 0). The kernel
+bypasses all policy verification execution paths and directly leverages
+the globally unique node zone list to execute lockless or locked buddy
+allocation passes. Under this uniprocessor constraint,
+alloc_pages_node() calls __alloc_pages_node(), which likewise resolves
+to invoke __alloc_pages_nodemask().</p>
+<p>The function __alloc_pages_nodemask() represents the definitive core
+routine for memory allocation workloads. It evaluates real-time memory
+availability by calling either get_page_from_freelist() or
+__alloc_pages_slowpath(). Depending on the gravity of the allocation
+constraints, __alloc_pages_slowpath() triggers paths including
+get_page_from_freelist(), __alloc_pages_direct_compact() (direct
+memory compaction), __alloc_pages_direct_reclaim() (direct page
+reclamation), or __alloc_pages_may_oom() (Out-Of-Memory execution). It
+can fulfill the request directly, or invoke iterative compaction and
+reclamation sweeps before attempting allocation. The primary task of
+get_page_from_freelist() is core allocation orchestration, and it serves
+as the ultimate execution funnel for all alternative allocation
+handlers; structurally, it is get_page_from_freelist() that executes the
+physical page acquisition. Throughout the allocation attempt,
+get_page_from_freelist() manages memory pools via node_reclaim() and
+extracts page blocks from the target lists via rmqueue().</p>
+<p>When extracting pages, rmqueue() leverages the mathematical buddy
+relationship to first attempt allocation from the smallest order group
+that can fully satisfy the requested capacity constraint. If free space
+is unavailable within the current order group, the routine searches
+upward through larger order groups. Upon a successful match in a higher
+order, the algorithm splits the block to satisfy the request while
+preserving the largest possible contiguous address spaces, shunting the
+residual split chunks down into the appropriate lower-order groups.</p>
+<p>The inverse process of releasing a page block back to the allocator is
+handled by the function __free_one_page(). Throughout this
+deallocation path, if the algorithm detects two physically contiguous
+memory blocks belonging to the same order, it combines them into a
+single larger block and moves the merged entity up into the subsequent
+higher-order group. Physically contiguous memory blocks of identical
+order that can be merged in this manner are designated as buddies.
+Figure 15-8 provides an execution example of a buddy memory allocation
+sequence. In this scenario, we assume a calling context requests a
+single page of memory (Order-0), while the system can only discover
+sufficient free blocks at Order-5 (the 32-page group).</p>
+<center>
+<figure>
+<img src="./media/image122.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-8 Execution Workflow of Buddy Memory Allocation</p>
+</figcaption>
+</figure>
+</center>
+<p>The allocation engine first identifies an available high-order block
+buddy5-0 containing sufficient tracking space via the appropriate
+free_list. It splits buddy5-0 in half, generating two distinct Order-4
+buddies designated as buddy4-0 and buddy4-1. The routine inserts
+buddy4-0 directly into an Order-4 free_list chain, while further
+bisecting buddy4-1 into two Order-3 buddies designated as buddy3-0 and
+buddy3-1. This algorithmic bisection loops continuously until the block
+is successfully broken down into two Order-0 buddies named buddy0-0 and
+buddy0-1. Finally, the engine appends buddy0-0 onto an Order-0 free_list
+tracking chain and fulfills the request by returning buddy0-1 to the
+calling user context.</p>
+<p>The inverse memory consolidation pipeline operates conversely to the
+allocation workflow, as demonstrated by the step-by-step example in
+Figure 15-8. When a physical page frame is released back to the
+allocator, the subsystem first evaluates whether its corresponding
+companion block (buddy) is currently vacant and eligible for
+consolidation. If the criteria are met, the released block merges with
+its companion to compose a single unified block of the subsequent higher
+order. This merging tracking loop executes recursively until it
+encounters a companion block that is active or ineligible for
+consolidation. Figure 15-9 details the complete consolidation workflow
+for a single physical page. Similarly, we assume a calling context
+releases an Order-0 page frame measuring 4096 bytes; upon reaching
+Order-5, the consolidated block encounters a companion that cannot be
+further merged, concluding the deallocation pass.</p>
+<center>
+<figure>
+<img src="./media/image123.png" style="width:90%;height:auto" />
+<figcaption>
+<p>Figure 15-9 Companion Block Consolidation Workflow within the Buddy Allocator</p>
+</figcaption>
+</figure>
+</center>
+<p>Throughout allocation passes, the system references a predefined
+fallback tracking topology formatted as follows:</p>
+<pre><code>static int fallbacks[MIGRATE_TYPES][3] = { /* fallback list */
+	[MIGRATE_UNMOVABLE]   = { MIGRATE_RECLAIMABLE, MIGRATE_MOVABLE,   
+      MIGRATE_TYPES },
+	[MIGRATE_MOVABLE]     = { MIGRATE_RECLAIMABLE, MIGRATE_UNMOVABLE, 
+      MIGRATE_TYPES },
+	[MIGRATE_RECLAIMABLE] = { MIGRATE_UNMOVABLE,   MIGRATE_MOVABLE,   
+      MIGRATE_TYPES },
+#ifdef CONFIG_CMA
+	[MIGRATE_CMA]         = { MIGRATE_TYPES }, /* Never used */
+#endif
+#ifdef CONFIG_MEMORY_ISOLATION
+	[MIGRATE_ISOLATE]     = { MIGRATE_TYPES }, /* Never used */
+#endif
+};
+</code></pre>
+<p>Each explicit row within this fallback matrix maps out a prioritized
+search hierarchy (Fallback List) to guide allocation borrowing when the
+primary requested migration type faces exhaustion. The values defined
+inside the array establish the descending precedence sequence for
+cross-type borrowing, which terminates upon encountering the
+MIGRATE_TYPES marker boundary.</p>
+<p>Fulfilling an allocation request demands the resolution of a
+topologically suitable memory node. A candidate node is classified as
+unsuitable if it is explicitly bound to a separate CPU thread context
+that prohibits external allocation, if its internal dirty page volume
+surpasses permitted system thresholds, or if its real-time residual
+capacity drops beneath safety watermarks. If a target node's allocation
+metrics breach these safety watermarks, the engine first evaluates
+whether it can harvest fresh memory blocks by pulling in pages whose
+initialization was deferred during early boot. If this path is
+exhausted, it ultimately determines if the free block count can be
+replenished by triggering active page reclamation (including invoking
+cross-node memory reclamation passes) alongside targeted compaction
+passes. Once an eligible node passes these validation blocks, the
+physical allocation is committed within its boundaries.</p>
+
+                        <footer class="custom-book-footer">
+                            Copyright © 2026 Guangzhou eSmart Information Technology Co., Ltd. All Rights Reserved.<br>
+    All content in this book is copyrighted by the author. For personal learning and exchange only. <strong>Commercial use without authorization is strictly prohibited.</strong>
+    Email: <p>
+        <!-- Insert envelope icon -->
+        ✉ 
+        <!-- Clickable encrypted email link -->
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;">
+            &#51;&#51;&#52;&#56;&#49;&#57;&#52;&#53;&#49;&#55;&#64;&#113;&#113;&#46;&#99;&#111;&#109;
+        </a>
+        | 
+        <a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;">
+            &#104;&#97;&#105;&#54;&#49;&#54;&#56;&#55;&#56;&#64;&#103;&#109;&#97;&#105;&#108;&#46;&#99;&#111;&#109;
+        </a>
+    </p>
+                        </footer>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="15.1 Fundamental Concepts.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="15.3 Red-Black Trees.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="15.1 Fundamental Concepts.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="15.3 Red-Black Trees.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+        <!-- Livereload script (if served using the cli tool) -->
+        <script>
+            const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsAddress = wsProtocol + "//" + location.host + "/" + "__livereload";
+            const socket = new WebSocket(wsAddress);
+            socket.onmessage = function (event) {
+                if (event.data === "reload") {
+                    socket.close();
+                    location.reload();
+                }
+            };
+
+            window.onbeforeunload = function() {
+                socket.close();
+            }
+        </script>
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-c22b7243.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
