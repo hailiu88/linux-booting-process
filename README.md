@@ -32,8 +32,8 @@
 
 
 ## 🌐 Read and Download
-[![](https://img.shields.io/badge/GitHub%20Pages-Read%20Online-2EA44F?style=flat-square&logo=github)](https://hailiu88.github.io/-ARM-Linux-/)
-[![](https://img.shields.io/badge/Vercel-Deploy-000000?style=flat-square&logo=vercel)](https://arm-linux.vercel.app)
+[![](https://img.shields.io/badge/GitHub%20Pages-Read%20Online-2EA44F?style=flat-square&logo=github)](https://hailiu88.github.io/linux-booting-process/)
+[![](https://img.shields.io/badge/Vercel-Deploy-000000?style=flat-square&logo=vercel)](https://linux-booting-process.vercel.app)
 [![](https://img.shields.io/badge/PDF-PDF%20Download-EA4335?style=flat-square&logo=adobeacrobatreader&logoColor=white)](https://github.com/hailiu88/-ARM-Linux-/releases/tag/v1.0.0)
 [![](https://img.shields.io/badge/Baidu%20Netdisk-Access%20Code%203e8h-1677FF?style=flat-square)](https://pan.baidu.com/s/1HrnW9BvAXStC7CPZxlUWfA?pwd=3e8h)
 
