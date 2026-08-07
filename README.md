@@ -64,5 +64,12 @@ Built with mdBook for a distraction-free, high-density reading experience, this 
 [![Powered by mdBook](https://shields.io)](https://github.com)
 
 
-## 📄 开源许可证
-本项目文字与代码内容采用 **[CC BY-SA 4.0 (知识共享署名-相同方式共享 4.0 国际许可协议)](https://creativecommons.orgdeed.zh)** 进行许可。这意味着您可以自由地分享、修改本书，但必须署名原作者，且修改后的作品必须采用相同的许可协议发布。
+### Open Source License
+
+This project's text and code are licensed under the **CC BY-SA 4.0** (Creative Commons Attribution-ShareAlike 4.0 International) License. This means you are free to share and adapt this book, provided that you give appropriate credit to the original author and distribute your contributions under the same license.
+
+[![](https://img.shields.io/badge/GitHub%20Pages-Read%20Online-2EA44F?style=flat-square&logo=github)](https://hailiu88.github.io/-ARM-Linux-/)
+[![](https://img.shields.io/badge/Vercel-Live-000000?style=flat-square&logo=vercel)](https://arm-linux.vercel.app)
+[![](https://img.shields.io/badge/PDF-PDF%20Download-EA4335?style=flat-square&logo=adobeacrobatreader&logoColor=white)](https://github.com/hailiu88/-ARM-Linux-/releases/tag/v1.0.0)
+[![](https://img.shields.io/badge/Baidu%20Netdisk-Access%20Code%203e8h-1677FF?style=flat-square)](https://pan.baidu.com/s/1HrnW9BvAXStC7CPZxlUWfA?pwd=3e8h)
+[![](https://img.shields.io/badge/License-CC%20BY--SA%204.0-ef9421?style=flat-square&logo=creativecommons&logoColor=white)](https://creativecommons.org/licenses/by-sa/4.0/)
